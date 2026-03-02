@@ -4,12 +4,18 @@ import { IoArrowBack, IoHomeOutline } from 'react-icons/io5';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import api from '../services/api';
+import { useLanguage } from '../context/Languagecontext';
+import { useTranslatedNews } from '../hooks/useTranslatedNews';
 import '../css/CategoryNews.css';
 
 function CategoryNews() {
-  const { categoryName } = useParams();
-  const [news, setNews]       = useState([]);
+  const { categoryName }  = useParams();
+  const [rawNews, setRawNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t, lang }           = useLanguage();
+
+  /* แปล news array อัตโนมัติ */
+  const { data: news, translating } = useTranslatedNews(rawNews);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -19,30 +25,20 @@ function CategoryNews() {
           api.get('/news'),
           api.get('/categories'),
         ]);
-
-        const target = catRes.data.find(
-          c => c.name.trim() === categoryName.trim()
-        );
-
+        const target = catRes.data.find(c => c.name.trim() === categoryName.trim());
         if (Array.isArray(newsRes.data)) {
           const filtered = target
-            ? newsRes.data.filter(n => {
-                const cid = n.category?._id || n.category;
-                return cid === target._id;
-              })
-            : newsRes.data.filter(
-                n => (n.category?.name || n.category) === categoryName
-              );
-          setNews(filtered);
+            ? newsRes.data.filter(n => (n.category?._id || n.category) === target._id)
+            : newsRes.data.filter(n => (n.category?.name || n.category) === categoryName);
+          setRawNews(filtered);
         }
       } catch (err) {
         console.error('CategoryNews error:', err);
-        setNews([]);
+        setRawNews([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchNews();
     window.scrollTo(0, 0);
   }, [categoryName]);
@@ -50,8 +46,10 @@ function CategoryNews() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
-                    'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    if (lang === 'en') {
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
@@ -59,31 +57,24 @@ function CategoryNews() {
     <div className="cn-root">
       <Navbar />
 
-      {/* ── PAGE HERO BAR ── */}
+      {/* ── HERO BAR ── */}
       <div className="cn-hero-bar">
         <div className="cn-hero-inner">
-          {/* Breadcrumb */}
           <div className="cn-breadcrumb">
-            <Link to="/" className="cn-bc-link">
-              <IoHomeOutline /> หน้าแรก
-            </Link>
+            <Link to="/" className="cn-bc-link"><IoHomeOutline /> {t('nd_home')}</Link>
             <span className="cn-bc-sep">›</span>
-            <Link to="/news" className="cn-bc-link">ข่าวสาร</Link>
+            <Link to="/news" className="cn-bc-link">{t('nd_news')}</Link>
             <span className="cn-bc-sep">›</span>
             <span className="cn-bc-current">{categoryName}</span>
           </div>
-
-          {/* Title */}
           <div className="cn-hero-title-row">
             <div>
-              <p className="cn-hero-label">หมวดหมู่ข่าว</p>
+              <p className="cn-hero-label">{t('cn_category')}</p>
               <h1 className="cn-hero-title">{categoryName}</h1>
             </div>
           </div>
-
-          {/* Back link */}
           <Link to="/news" className="cn-back-btn">
-            <IoArrowBack /> กลับหน้าข่าวทั้งหมด
+            <IoArrowBack /> {t('cn_backAll')}
           </Link>
         </div>
       </div>
@@ -91,27 +82,26 @@ function CategoryNews() {
       {/* ── CONTENT ── */}
       <div className="cn-container">
 
-        {/* Stats bar */}
         {!loading && (
           <div className="cn-stats-bar">
             <span className="cn-stats-text">
-              พบ <strong>{news.length}</strong> ข่าว ในหมวด "{categoryName}"
+              {t('cn_found')} <strong>{news.length}</strong> {t('cn_foundSuffix')} "{categoryName}"
             </span>
+            {translating && (
+              <span className="cn-translating">
+                <span className="cn-translating-spinner" /> Translating...
+              </span>
+            )}
           </div>
         )}
 
-        {/* Loading */}
         {loading ? (
           <div className="cn-loading">
-            <div className="cn-loading-bars">
-              <span /><span /><span /><span />
-            </div>
-            <p>กำลังโหลดข่าวสาร...</p>
+            <div className="cn-loading-bars"><span /><span /><span /><span /></div>
+            <p>{t('cn_loading')}</p>
           </div>
         ) : news.length > 0 ? (
-
-          /* News Grid */
-          <div className="cn-grid">
+          <div className={`cn-grid ${translating ? 'cn-fading' : ''}`}>
             {news.map((item, index) => (
               <Link
                 to={`/news/${item._id}`}
@@ -140,19 +130,15 @@ function CategoryNews() {
               </Link>
             ))}
           </div>
-
         ) : (
-
-          /* Empty state */
           <div className="cn-empty">
             <div className="cn-empty-icon">📭</div>
-            <h3>ไม่พบข่าวในหมวด "{categoryName}"</h3>
-            <p>ยังไม่มีข่าวสารในหมวดหมู่นี้ในขณะนี้</p>
+            <h3>{t('cn_empty')} "{categoryName}"</h3>
+            <p>{t('cn_emptyDesc')}</p>
             <Link to="/news" className="cn-empty-btn">
-              <IoArrowBack /> ดูข่าวทั้งหมด
+              <IoArrowBack /> {t('cn_emptyBtn')}
             </Link>
           </div>
-
         )}
       </div>
 

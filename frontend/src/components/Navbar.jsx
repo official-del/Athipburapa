@@ -3,20 +3,20 @@ import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut } from "react-ic
 import { CiSearch } from "react-icons/ci";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/Languagecontext';
+import { useLanguage } from '../context/LanguageContext';
 import { categoryAPI } from '../services/api';
 import './Navbar.css';
 
 function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout }        = useAuth();
   const { lang, switchLang, t } = useLanguage();
-  const navigate = useNavigate();
-  const location  = useLocation();
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate                = useNavigate();
+  const location                = useLocation();
+  const [showUserMenu, setShowUserMenu]     = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categories, setCategories] = useState([]);
+  const [showSearch, setShowSearch]         = useState(false);
+  const [searchTerm, setSearchTerm]         = useState('');
+  const [categories, setCategories]         = useState([]);
   const searchRef = useRef(null);
 
   const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
@@ -48,8 +48,7 @@ function Navbar() {
     }
   };
 
-  /* ── ตรวจ active ── */
-  const path = location.pathname;
+  const path        = location.pathname;
   const isAllActive = path === '/news';
   const activeCat   = path.startsWith('/news/category/')
     ? decodeURIComponent(path.split('/news/category/')[1])
@@ -80,13 +79,13 @@ function Navbar() {
                 onClick={() => switchLang('th')}
                 aria-label="ภาษาไทย"
               >TH</button>
-              <span className="nb-lang-sep">|</span>
               <button
                 className={`nb-lang-btn${lang === 'en' ? ' active' : ''}`}
                 onClick={() => switchLang('en')}
                 aria-label="English"
               >EN</button>
             </div>
+
             <button className="nb-icon-btn" onClick={() => setShowSearch(true)} aria-label="ค้นหา">
               <CiSearch />
             </button>
@@ -107,10 +106,7 @@ function Navbar() {
 
                 {showUserMenu && (
                   <>
-                    <div
-                      style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-                      onClick={() => setShowUserMenu(false)}
-                    />
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setShowUserMenu(false)} />
                     <div className="nb-dropdown" style={{ zIndex: 1000 }}>
                       <div className="nb-dropdown-header">
                         <p className="name">{user.fullName || user.username}</p>
@@ -141,7 +137,9 @@ function Navbar() {
 
         {/* ── CATEGORY BAR ── */}
         <div className="nb-cats">
-          <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>{t('nav_allNews')}</Link>
+          <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
+            {t('nav_allNews')}
+          </Link>
           {categories.map(cat => (
             <Link
               key={cat._id}
@@ -185,6 +183,7 @@ function Navbar() {
                 <IoClose />
               </button>
             </div>
+
             {/* Lang switcher ใน drawer — แสดงเฉพาะ ≤360px */}
             <div className="nb-drawer-lang">
               <span className="nb-drawer-lang-label">Language</span>
@@ -201,7 +200,11 @@ function Navbar() {
             </div>
 
             <div className="nb-drawer-links">
-              <Link to="/news" className={`nb-drawer-link${isAllActive ? ' active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+              <Link
+                to="/news"
+                className={`nb-drawer-link${isAllActive ? ' active' : ''}`}
+                onClick={() => setShowMobileMenu(false)}
+              >
                 {t('nav_allNews')}
               </Link>
               {categories.length > 0 && (

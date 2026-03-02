@@ -1,57 +1,43 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/Languagecontext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import '../css/Auth.css';
 
 function Register() {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: ''
+    username: '', email: '', password: '', confirmPassword: '', fullName: ''
   });
-  const [error, setError] = useState('');
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const { register }          = useAuth();
+  const { t }                 = useLanguage();
+  const navigate              = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    // ตรวจสอบรหัสผ่าน
     if (formData.password !== formData.confirmPassword) {
-      setError('รหัสผ่านไม่ตรงกัน');
-      return;
+      return setError(t('auth_pwdMismatch'));
     }
-
     if (formData.password.length < 6) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
-      return;
+      return setError(t('auth_pwdTooShort'));
     }
-
     setLoading(true);
-
     try {
       await register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
-        fullName: formData.fullName
+        fullName: formData.fullName,
       });
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'เกิดข้อผิดพลาดในการสมัครสมาชิก');
+      setError(err.response?.data?.message || t('auth_errRegister'));
     } finally {
       setLoading(false);
     }
@@ -62,89 +48,62 @@ function Register() {
       <Navbar />
       <div className="auth-container">
         <div className="auth-box">
-          <h1 className="auth-title">สมัครสมาชิก</h1>
-          
+          <h1 className="auth-title">{t('auth_register')}</h1>
+
           {error && <div className="auth-error">{error}</div>}
-          
+
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="fullName">ชื่อ-นามสกุล</label>
+              <label htmlFor="fullName">{t('auth_fullName')}</label>
               <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                required
-                placeholder="กรุณาใส่ชื่อ-นามสกุล"
+                type="text" id="fullName" name="fullName"
+                value={formData.fullName} onChange={handleChange}
+                required placeholder={t('auth_phFullName')}
               />
             </div>
-
             <div className="form-group">
-              <label htmlFor="username">ชื่อผู้ใช้</label>
+              <label htmlFor="username">{t('auth_username')}</label>
               <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                required
-                placeholder="กรุณาใส่ชื่อผู้ใช้"
-                minLength="3"
+                type="text" id="username" name="username"
+                value={formData.username} onChange={handleChange}
+                required placeholder={t('auth_phUsername')} minLength="3"
               />
             </div>
-
             <div className="form-group">
-              <label htmlFor="email">อีเมล</label>
+              <label htmlFor="email">{t('auth_email')}</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="กรุณาใส่อีเมล"
+                type="email" id="email" name="email"
+                value={formData.email} onChange={handleChange}
+                required placeholder={t('auth_phEmail')}
               />
             </div>
-
             <div className="form-group">
-              <label htmlFor="password">รหัสผ่าน</label>
+              <label htmlFor="password">{t('auth_password')}</label>
               <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="กรุณาใส่รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)"
-                minLength="6"
+                type="password" id="password" name="password"
+                value={formData.password} onChange={handleChange}
+                required placeholder={t('auth_phPassword')} minLength="6"
               />
             </div>
-
             <div className="form-group">
-              <label htmlFor="confirmPassword">ยืนยันรหัสผ่าน</label>
+              <label htmlFor="confirmPassword">{t('auth_confirmPwd')}</label>
               <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                placeholder="กรุณาใส่รหัสผ่านอีกครั้ง"
-                minLength="6"
+                type="password" id="confirmPassword" name="confirmPassword"
+                value={formData.confirmPassword} onChange={handleChange}
+                required placeholder={t('auth_phConfirmPwd')} minLength="6"
               />
             </div>
-
             <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'กำลังสมัครสมาชิก...' : 'สมัครสมาชิก'}
+              {loading ? t('auth_registeringBtn') : t('auth_registerBtn')}
             </button>
           </form>
 
           <p className="auth-link">
-            มีบัญชีอยู่แล้ว? <Link to="/login">เข้าสู่ระบบ</Link>
+            {t('auth_hasAccount')} <Link to="/login">{t('auth_toLogin')}</Link>
           </p>
         </div>
       </div>
+      <Footer />
     </>
   );
 }

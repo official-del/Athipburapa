@@ -7,7 +7,7 @@ import './Footer.css';
 
 const Footer = () => {
   const [categories, setCategories] = useState([]);
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => {
     categoryAPI.getAll()
@@ -15,19 +15,14 @@ const Footer = () => {
       .catch(err => console.error('Error fetching categories:', err));
   }, []);
 
-  const isEn = lang === 'en';
-
   return (
     <footer className="ft-root">
-
       <div className="ft-main">
         <div className="ft-inner">
 
           {/* หมวดหมู่ */}
           <div className="ft-col">
-            <h4 className="ft-col-title">
-              {isEn ? 'Categories' : 'หมวดหมู่'}
-            </h4>
+            <h4 className="ft-col-title">{t('footer_categories')}</h4>
             <div className="ft-links">
               {categories.length > 0 ? (
                 categories.map(cat => (
@@ -36,29 +31,25 @@ const Footer = () => {
                   </Link>
                 ))
               ) : (
-                <span className="ft-loading-text">{t('nd_loading')}</span>
+                <span className="ft-loading-text">{t('cn_loading')}</span>
               )}
             </div>
           </div>
 
           {/* เกี่ยวกับเรา */}
           <div className="ft-col">
-            <h4 className="ft-col-title">
-              {isEn ? 'About Us' : 'เกี่ยวกับเรา'}
-            </h4>
+            <h4 className="ft-col-title">{t('footer_aboutUs')}</h4>
             <div className="ft-links">
-              <Link to="/about">{isEn ? 'About Us' : 'เกี่ยวกับเรา'}</Link>
-              <Link to="/contact">{isEn ? 'Contact Us' : 'ติดต่อเรา'}</Link>
-              <Link to="/privacy">{isEn ? 'Privacy Policy' : 'นโยบายความเป็นส่วนตัว'}</Link>
-              <Link to="/terms">{isEn ? 'Terms of Service' : 'เงื่อนไขการใช้งาน'}</Link>
+              <Link to="/about">{t('footer_aboutLink')}</Link>
+              <Link to="/contact">{t('footer_contactLink')}</Link>
+              <Link to="/privacy">{t('footer_privacyLink')}</Link>
+              <Link to="/terms">{t('footer_termsLink')}</Link>
             </div>
           </div>
 
           {/* ติดตามเราได้ที่ */}
           <div className="ft-col ft-col-social">
-            <h4 className="ft-col-title">
-              {isEn ? 'Follow Us' : 'ติดตามเราได้ที่'}
-            </h4>
+            <h4 className="ft-col-title">{t('footer_followUs')}</h4>
             <div className="ft-social">
               <a href="https://web.facebook.com/Athipburapa.news?locale=th_TH" target="_blank" rel="noreferrer" aria-label="Facebook">
                 <IoLogoFacebook />
@@ -77,20 +68,15 @@ const Footer = () => {
       <div className="ft-bottom">
         <div className="ft-bottom-inner">
           <div className="ft-bottom-links">
-            <span className="ft-bottom-label">
-              {isEn ? 'About Athipburapa' : 'เกี่ยวกับ Athipburapa'}
-            </span>
-            <Link to="/about">{isEn ? 'About Us' : 'เกี่ยวกับเรา'}</Link>
-            <Link to="/contact">{isEn ? 'Contact Us' : 'ติดต่อเรา'}</Link>
-            <Link to="/privacy">{isEn ? 'Privacy Policy' : 'นโยบายความเป็นส่วนตัว'}</Link>
-            <Link to="/terms">{isEn ? 'Terms of Service' : 'เงื่อนไขการใช้งาน'}</Link>
+            <span className="ft-bottom-label">{t('footer_aboutLabel')}</span>
+            <Link to="/about">{t('footer_aboutLink')}</Link>
+            <Link to="/contact">{t('footer_contactLink')}</Link>
+            <Link to="/privacy">{t('footer_privacyLink')}</Link>
+            <Link to="/terms">{t('footer_termsLink')}</Link>
           </div>
-          <p className="ft-copyright">
-            © 2026 Athipburapa -{isEn ? ' Online News Website. All rights reserved.' : ' เว็บไซต์ข่าวสารออนไลน์ สงวนลิขสิทธิ์'}
-          </p>
+          <p className="ft-copyright">{t('footer_copyright')}</p>
         </div>
       </div>
-
     </footer>
   );
 };
