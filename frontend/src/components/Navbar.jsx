@@ -3,7 +3,7 @@ import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut } from "react-ic
 import { CiSearch } from "react-icons/ci";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/Languagecontext'; // ตรวจสอบตัวสะกดชื่อไฟล์ Context ด้วยนะครับ
+import { useLanguage } from '../context/Languagecontext';
 import { categoryAPI } from '../services/api';
 import './Navbar.css';
 
@@ -12,7 +12,6 @@ function Navbar() {
   const { lang, switchLang, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -22,15 +21,11 @@ function Navbar() {
 
   const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
 
-  // --- ส่วนที่แก้ไข: เพิ่ม [lang] เข้าไปเพื่อให้ Fetch ใหม่เมื่อเปลี่ยนภาษา ---
   useEffect(() => {
-    // ส่งค่า lang ไปที่ API เพื่อให้ Backend ส่งชื่อหมวดหมู่ที่เป็นภาษานั้นๆ กลับมา
-    categoryAPI.getAll(lang) 
-      .then(res => {
-        setCategories(res.data);
-      })
+    categoryAPI.getAll()
+      .then(res => setCategories(res.data))
       .catch(err => console.error('Error fetching categories:', err));
-  }, [lang]); // <--- สำคัญมาก: เมื่อ lang เปลี่ยน useEffect นี้จะทำงานใหม่
+  }, []);
 
   useEffect(() => {
     if (showSearch && searchRef.current) searchRef.current.focus();
@@ -62,10 +57,9 @@ function Navbar() {
   return (
     <>
       <nav className="nb-root">
-        {/* ── TOP BAR ── */}
         <div className="nb-top">
           <div className="nb-left">
-            <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="Menu">
+            <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="เมนู">
               <IoMenu />
             </button>
           </div>
@@ -148,8 +142,7 @@ function Navbar() {
               to={`/news/category/${encodeURIComponent(cat.name)}`}
               className={`nb-cat-link${activeCat === cat.name ? ' active' : ''}`}
             >
-              {/* ถ้า Backend ส่งมาทั้งสองภาษา ให้ใช้เงื่อนไขเลือกแสดง เช่น cat.name_en หรือ cat.name_th */}
-              {lang === 'en' ? (cat.name_en || cat.name) : (cat.name_th || cat.name)}
+              {t(cat.name)} {/* <--- แก้ไขจุดนี้ให้ใช้ t() */}
             </Link>
           ))}
         </div>
@@ -219,7 +212,7 @@ function Navbar() {
                       className={`nb-drawer-cat${activeCat === cat.name ? ' active' : ''}`}
                       onClick={() => setShowMobileMenu(false)}
                     >
-                      {lang === 'en' ? (cat.name_en || cat.name) : (cat.name_th || cat.name)}
+                      {t(cat.name)} {/* <--- แก้ไขจุดนี้ให้ใช้ t() */}
                     </Link>
                   ))}
                 </>
