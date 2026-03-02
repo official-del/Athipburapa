@@ -427,6 +427,27 @@
 }
 
 /* ================================================
+   DRAWER LANG SWITCHER (แสดงเฉพาะ ≤360px)
+   ================================================ */
+.nb-drawer-lang {
+  display: none;           /* ซ่อนโดย default */
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.nb-drawer-lang-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.nb-drawer-lang .nb-lang-switcher {
+  background: #f3f4f6;
+}
+
+/* ================================================
    ANIMATIONS
    ================================================ */
 @keyframes nb-fadeIn {
@@ -448,14 +469,18 @@
    RESPONSIVE
    ================================================ */
 
-/* Tablet */
+/* Tablet ≤ 768px */
 @media (max-width: 768px) {
   .nb-top {
-    padding: 0 14px;
+    padding: 0 12px;
     height: 52px;
+    gap: 4px;
+  }
+  .nb-right {
+    gap: 4px;       /* ลด gap ระหว่าง item */
   }
   .nb-logo {
-    font-size: 20px;
+    font-size: 19px;
   }
   .nb-cats {
     justify-content: flex-start;
@@ -466,28 +491,42 @@
     font-size: 13px;
     padding: 0 10px;
   }
-  .nb-login-text {
-    display: none;
+  /* Login — แสดงแค่ icon */
+  .nb-login-text { display: none; }
+  .nb-login-btn {
+    padding: 7px;
+    border-radius: 50%;
+    gap: 0;
+    min-width: 34px;
+    justify-content: center;
+  }
+  /* Lang switcher — เล็กลงนิดหน่อย */
+  .nb-lang-switcher {
+    padding: 2px 3px;
+    gap: 0;
   }
   .nb-lang-btn {
     font-size: 10px;
-    padding: 3px 6px;
+    padding: 3px 7px;
   }
-  .nb-login-btn {
-    padding: 8px;
-    border-radius: 50%;
-    gap: 0;
+  /* Icon btn */
+  .nb-icon-btn {
+    font-size: 20px;
+    padding: 5px;
   }
 }
 
-/* Mobile */
+/* Mobile ≤ 480px */
 @media (max-width: 480px) {
   .nb-top {
-    padding: 0 10px;
+    padding: 0 8px;
     height: 50px;
   }
+  .nb-right {
+    gap: 2px;
+  }
   .nb-logo {
-    font-size: 18px;
+    font-size: 17px;
   }
   .nb-cats {
     height: 38px;
@@ -498,7 +537,38 @@
     padding: 0 8px;
   }
   .nb-icon-btn {
-    font-size: 20px;
+    font-size: 19px;
     padding: 4px;
+  }
+  /* Lang switcher — เล็กสุด */
+  .nb-lang-switcher {
+    padding: 2px;
+    border-radius: 14px;
+  }
+  .nb-lang-btn {
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 12px;
+  }
+  /* Avatar */
+  .nb-avatar-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+  }
+  /* Login icon only */
+  .nb-login-btn {
+    padding: 6px;
+    min-width: 30px;
+  }
+}
+
+/* Extra small ≤ 360px — ย้าย lang switcher เข้า drawer แทน */
+@media (max-width: 360px) {
+  .nb-lang-switcher {
+    display: none;   /* ซ่อนใน top bar */
+  }
+  .nb-drawer-lang {
+    display: flex;   /* แสดงใน drawer แทน */
   }
 }
