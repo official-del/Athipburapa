@@ -21,11 +21,12 @@ function Navbar() {
 
   const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
 
+  //ดึงข้อมูลใหม่ทุกครั้งที่ lang เปลี่ยน (Real-time ตาม Database)
   useEffect(() => {
     categoryAPI.getAll()
       .then(res => setCategories(res.data))
       .catch(err => console.error('Error fetching categories:', err));
-  }, []);
+  }, [lang]); // <--- เพิ่ม lang ตรงนี้เพื่อให้ useEffect ทำงานใหม่เมื่อสลับภาษา
 
   useEffect(() => {
     if (showSearch && searchRef.current) searchRef.current.focus();
@@ -50,16 +51,26 @@ function Navbar() {
 
   const path = location.pathname;
   const isAllActive = path === '/news';
+  
+  // ตรวจสอบ Active Category จากชื่อ (รองรับทั้ง TH/EN)
   const activeCat = path.startsWith('/news/category/')
     ? decodeURIComponent(path.split('/news/category/')[1])
     : null;
+
+  // ฟังก์ชันเลือกแสดงชื่อหมวดหมู่ตามภาษาปัจจุบัน
+  const getCatName = (cat) => {
+    if (lang === 'en') {
+      return cat.name_en || cat.name; // ถ้าไม่มีภาษาอังกฤษ ให้ใช้ค่าเริ่มต้น
+    }
+    return cat.name_th || cat.name;
+  };
 
   return (
     <>
       <nav className="nb-root">
         <div className="nb-top">
           <div className="nb-left">
-            <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="เมนู">
+            <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="Menu">
               <IoMenu />
             </button>
           </div>
@@ -142,29 +153,11 @@ function Navbar() {
               to={`/news/category/${encodeURIComponent(cat.name)}`}
               className={`nb-cat-link${activeCat === cat.name ? ' active' : ''}`}
             >
-              {t(cat.name)} {/* <--- แก้ไขจุดนี้ให้ใช้ t() */}
+              {getCatName(cat)} 
             </Link>
           ))}
         </div>
       </nav>
-
-      {/* ── SEARCH OVERLAY ── */}
-      {showSearch && (
-        <div className="nb-search-overlay" onClick={() => setShowSearch(false)}>
-          <div className="nb-search-box" onClick={e => e.stopPropagation()}>
-            <form onSubmit={handleSearch}>
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder={t('nav_search')}
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-              <button type="submit"><CiSearch /></button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ── MOBILE DRAWER ── */}
       {showMobileMenu && (
@@ -179,44 +172,21 @@ function Navbar() {
                 <IoClose />
               </button>
             </div>
-
-            <div className="nb-drawer-lang">
-              <span className="nb-drawer-lang-label">Language</span>
-              <div className="nb-lang-switcher">
-                <button
-                  className={`nb-lang-btn${lang === 'th' ? ' active' : ''}`}
-                  onClick={() => { switchLang('th'); setShowMobileMenu(false); }}
-                >TH</button>
-                <button
-                  className={`nb-lang-btn${lang === 'en' ? ' active' : ''}`}
-                  onClick={() => { switchLang('en'); setShowMobileMenu(false); }}
-                >EN</button>
-              </div>
-            </div>
-
             <div className="nb-drawer-links">
-              <Link
-                to="/news"
-                className={`nb-drawer-link${isAllActive ? ' active' : ''}`}
-                onClick={() => setShowMobileMenu(false)}
-              >
+              <Link to="/news" className="nb-drawer-link" onClick={() => setShowMobileMenu(false)}>
                 {t('nav_allNews')}
               </Link>
-              {categories.length > 0 && (
-                <>
-                  <div className="nb-drawer-section-title">{t('nav_categories')}</div>
-                  {categories.map(cat => (
-                    <Link
-                      key={cat._id}
-                      to={`/news/category/${encodeURIComponent(cat.name)}`}
-                      className={`nb-drawer-cat${activeCat === cat.name ? ' active' : ''}`}
-                      onClick={() => setShowMobileMenu(false)}
-                    >
-                      {t(cat.name)} {/* <--- แก้ไขจุดนี้ให้ใช้ t() */}
-                    </Link>
-                  ))}
-                </>
-              )}
+              <div className="nb-drawer-section-title">{t('nav_categories')}</div>
+              {categories.map(cat => (
+                <Link
+                  key={cat._id}
+                  to={`/news/category/${encodeURIComponent(cat.name)}`}
+                  className="nb-drawer-cat"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  {getCatName(cat)}
+                </Link>
+              ))}
             </div>
           </div>
         </>
