@@ -14,7 +14,6 @@ const INITIAL_FORM = {
   author: ''
 };
 
-// ---- Helper: แปลง error จาก axios/fetch เป็นข้อความ ----
 function parseError(err) {
   if (!err) return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
   if (err.response) {
@@ -31,7 +30,6 @@ function parseError(err) {
   return err.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
 }
 
-// ---- Validation ----
 function validateForm(formData) {
   const errors = {};
   if (!formData.title.trim()) errors.title = 'กรุณากรอกหัวข้อข่าว';
@@ -46,7 +44,9 @@ function validateForm(formData) {
 }
 
 function AdminDashboard() {
-  const { user } = useAuth();
+  // ✅ ดึง loading จาก AuthContext ด้วย
+  const { user, loading: authLoading } = useAuth();
+
   const [news, setNews] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,12 +55,11 @@ function AdminDashboard() {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [notification, setNotification] = useState(null); // { type: 'success' | 'error', message }
-  const [confirmDelete, setConfirmDelete] = useState(null); // id ที่กำลังจะลบ
+  const [notification, setNotification] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const notifyTimer = useRef(null);
 
-  // ---- Notification (ใช้ ref เก็บ timer ป้องกัน memory leak) ----
   const showNotification = useCallback((type, message) => {
     if (notifyTimer.current) clearTimeout(notifyTimer.current);
     setNotification({ type, message });
@@ -71,7 +70,6 @@ function AdminDashboard() {
     return () => { if (notifyTimer.current) clearTimeout(notifyTimer.current); };
   }, []);
 
-  // ---- Fetch Data ----
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -82,25 +80,23 @@ function AdminDashboard() {
       setNews(newsRes.data);
       setCategories(catRes.data);
     } catch (err) {
-      console.error('Error fetching data:', err);
       showNotification('error', parseError(err));
     } finally {
       setLoading(false);
     }
   }, [showNotification]);
 
+  // ✅ fetch data เฉพาะเมื่อ auth เสร็จแล้วและเป็น admin
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!authLoading && user?.role === 'admin') {
+      fetchData();
+    }
+  }, [authLoading, user, fetchData]);
 
-  // ---- Form Handlers ----
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // ล้าง error ของ field นั้นทันทีที่ user เริ่มพิมพ์
-    if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: undefined }));
-    }
+    if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
   const handleEdit = (item) => {
@@ -125,24 +121,17 @@ function AdminDashboard() {
   };
 
   const handleCloseModal = () => {
-    if (isSubmitting) return; // ป้องกันปิด modal ขณะกำลัง submit
+    if (isSubmitting) return;
     setShowModal(false);
     setEditingNews(null);
     setFormData(INITIAL_FORM);
     setFormErrors({});
   };
 
-  // ---- Submit (Create / Update) ----
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate ก่อน
     const errors = validateForm(formData);
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     setIsSubmitting(true);
     try {
       if (editingNews) {
@@ -153,19 +142,15 @@ function AdminDashboard() {
         showNotification('success', 'สร้างข่าวสำเร็จ ✓');
       }
       handleCloseModal();
-      await fetchData(); // รอ fetch ใหม่ก่อนค่อยซ่อน loading
+      await fetchData();
     } catch (err) {
-      console.error('Submit error:', err);
       showNotification('error', parseError(err));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ---- Delete ----
-  const handleDeleteRequest = (id) => {
-    setConfirmDelete(id);
-  };
+  const handleDeleteRequest = (id) => setConfirmDelete(id);
 
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
@@ -174,7 +159,6 @@ function AdminDashboard() {
       setNews(prev => prev.filter(item => item._id !== confirmDelete));
       showNotification('success', 'ลบข่าวสำเร็จ ✓');
     } catch (err) {
-      console.error('Delete error:', err);
       showNotification('error', parseError(err));
     } finally {
       setIsDeleting(false);
@@ -182,7 +166,19 @@ function AdminDashboard() {
     }
   };
 
-  // ---- Guard: ไม่ใช่ admin ----
+  // ✅ ขั้นตอนที่ 1: รอ AuthContext โหลดเสร็จก่อน — ป้องกัน flash "ไม่มีสิทธิ์"
+  if (authLoading) {
+    return (
+      <div className="admin-page">
+        <Navbar />
+        <div className="admin-container">
+          <div className="admin-loading">กำลังตรวจสอบสิทธิ์...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ ขั้นตอนที่ 2: auth โหลดเสร็จแล้ว ค่อยตรวจ role
   if (!user || user.role !== 'admin') {
     return (
       <div className="admin-page">
@@ -200,7 +196,6 @@ function AdminDashboard() {
     <div className="admin-page">
       <Navbar />
 
-      {/* Notification Toast */}
       {notification && (
         <div className={`admin-notification admin-notification--${notification.type}`}>
           {notification.message}
@@ -238,37 +233,24 @@ function AdminDashboard() {
                           src={item.image}
                           alt={item.title}
                           className="admin-news-thumb"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/images/placeholder.png';
-                          }}
+                          onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.png'; }}
                         />
                       </td>
                       <td className="admin-news-title">{item.title}</td>
                       <td>{item.category?.name || 'ไม่มีหมวดหมู่'}</td>
                       <td>{new Date(item.createdAt).toLocaleDateString('th-TH')}</td>
                       <td className="admin-actions">
-                        <button
-                          className="edit-btn"
-                          onClick={() => handleEdit(item)}
-                          title="แก้ไข"
-                        >
+                        <button className="edit-btn" onClick={() => handleEdit(item)} title="แก้ไข">
                           <HiOutlinePencil />
                         </button>
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleDeleteRequest(item._id)}
-                          title="ลบ"
-                        >
+                        <button className="delete-btn" onClick={() => handleDeleteRequest(item._id)} title="ลบ">
                           <HiOutlineTrash />
                         </button>
                       </td>
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan="5" className="admin-empty">ยังไม่มีข่าวสาร</td>
-                  </tr>
+                  <tr><td colSpan="5" className="admin-empty">ยังไม่มีข่าวสาร</td></tr>
                 )}
               </tbody>
             </table>
@@ -276,40 +258,23 @@ function AdminDashboard() {
         )}
       </div>
 
-      {/* ==================== Form Modal ==================== */}
+      {/* Form Modal */}
       {showModal && (
-        <div
-          className="modal-overlay"
-          onClick={handleCloseModal}
-        >
+        <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>{editingNews ? 'แก้ไขข่าว' : 'เพิ่มข่าวใหม่'}</h2>
-
             <form onSubmit={handleSubmit} noValidate>
 
-              {/* หัวข้อข่าว */}
               <div className={`form-group${formErrors.title ? ' form-group--error' : ''}`}>
                 <label>หัวข้อข่าว <span className="required">*</span></label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  disabled={isSubmitting}
-                  placeholder="กรอกหัวข้อข่าว"
-                />
+                <input type="text" name="title" value={formData.title} onChange={handleInputChange}
+                  disabled={isSubmitting} placeholder="กรอกหัวข้อข่าว" />
                 {formErrors.title && <span className="form-error-msg">{formErrors.title}</span>}
               </div>
 
-              {/* หมวดหมู่ */}
               <div className={`form-group${formErrors.category ? ' form-group--error' : ''}`}>
                 <label>หมวดหมู่ <span className="required">*</span></label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  disabled={isSubmitting}
-                >
+                <select name="category" value={formData.category} onChange={handleInputChange} disabled={isSubmitting}>
                   <option value="">เลือกหมวดหมู่</option>
                   {categories.map(cat => (
                     <option key={cat._id} value={cat._id}>{cat.name}</option>
@@ -318,112 +283,61 @@ function AdminDashboard() {
                 {formErrors.category && <span className="form-error-msg">{formErrors.category}</span>}
               </div>
 
-              {/* URL รูปภาพ */}
               <div className={`form-group${formErrors.image ? ' form-group--error' : ''}`}>
                 <label>URL รูปภาพ <span className="required">*</span></label>
-                <input
-                  type="text"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleInputChange}
-                  disabled={isSubmitting}
-                  placeholder="https://example.com/image.jpg"
-                />
+                <input type="text" name="image" value={formData.image} onChange={handleInputChange}
+                  disabled={isSubmitting} placeholder="https://example.com/image.jpg" />
                 {formErrors.image && <span className="form-error-msg">{formErrors.image}</span>}
-                {/* Preview รูปภาพ */}
                 {formData.image && !formErrors.image && (
-                  <img
-                    src={formData.image}
-                    alt="Preview"
-                    className="admin-img-preview"
+                  <img src={formData.image} alt="Preview" className="admin-img-preview"
                     onError={(e) => { e.target.style.display = 'none'; }}
-                    onLoad={(e) => { e.target.style.display = 'block'; }}
-                  />
+                    onLoad={(e) => { e.target.style.display = 'block'; }} />
                 )}
               </div>
 
-              {/* คำโปรย */}
               <div className="form-group">
                 <label>คำโปรย (Excerpt)</label>
-                <textarea
-                  name="excerpt"
-                  value={formData.excerpt}
-                  onChange={handleInputChange}
-                  rows="2"
-                  disabled={isSubmitting}
-                  placeholder="สรุปข่าวสั้นๆ (ไม่บังคับ)"
-                />
+                <textarea name="excerpt" value={formData.excerpt} onChange={handleInputChange}
+                  rows="2" disabled={isSubmitting} placeholder="สรุปข่าวสั้นๆ (ไม่บังคับ)" />
               </div>
 
-              {/* เนื้อหาข่าว */}
               <div className={`form-group${formErrors.content ? ' form-group--error' : ''}`}>
                 <label>เนื้อหาข่าว (HTML) <span className="required">*</span></label>
-                <textarea
-                  name="content"
-                  value={formData.content}
-                  onChange={handleInputChange}
-                  rows="6"
-                  disabled={isSubmitting}
-                  placeholder="<p>เนื้อหาข่าว...</p>"
-                />
+                <textarea name="content" value={formData.content} onChange={handleInputChange}
+                  rows="6" disabled={isSubmitting} placeholder="<p>เนื้อหาข่าว...</p>" />
                 {formErrors.content && <span className="form-error-msg">{formErrors.content}</span>}
               </div>
 
-              {/* ผู้เขียน */}
               <div className="form-group">
                 <label>ผู้เขียน</label>
-                <input
-                  type="text"
-                  name="author"
-                  value={formData.author}
-                  onChange={handleInputChange}
-                  disabled={isSubmitting}
-                  placeholder="ชื่อผู้เขียน (ไม่บังคับ)"
-                />
+                <input type="text" name="author" value={formData.author} onChange={handleInputChange}
+                  disabled={isSubmitting} placeholder="ชื่อผู้เขียน (ไม่บังคับ)" />
               </div>
 
               <div className="modal-actions">
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={handleCloseModal}
-                  disabled={isSubmitting}
-                >
+                <button type="button" className="cancel-btn" onClick={handleCloseModal} disabled={isSubmitting}>
                   ยกเลิก
                 </button>
-                <button
-                  type="submit"
-                  className="save-btn"
-                  disabled={isSubmitting}
-                >
+                <button type="submit" className="save-btn" disabled={isSubmitting}>
                   {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
                 </button>
               </div>
-
             </form>
           </div>
         </div>
       )}
 
-      {/* ==================== Confirm Delete Modal ==================== */}
+      {/* Confirm Delete Modal */}
       {confirmDelete && (
         <div className="modal-overlay" onClick={() => !isDeleting && setConfirmDelete(null)}>
           <div className="modal-content modal-confirm" onClick={(e) => e.stopPropagation()}>
             <h2>ยืนยันการลบ</h2>
             <p>คุณแน่ใจหรือไม่ว่าต้องการลบข่าวนี้?<br />การกระทำนี้ไม่สามารถย้อนกลับได้</p>
             <div className="modal-actions">
-              <button
-                className="cancel-btn"
-                onClick={() => setConfirmDelete(null)}
-                disabled={isDeleting}
-              >
+              <button className="cancel-btn" onClick={() => setConfirmDelete(null)} disabled={isDeleting}>
                 ยกเลิก
               </button>
-              <button
-                className="delete-btn"
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-              >
+              <button className="delete-btn" onClick={handleDeleteConfirm} disabled={isDeleting}>
                 {isDeleting ? 'กำลังลบ...' : 'ลบ'}
               </button>
             </div>
