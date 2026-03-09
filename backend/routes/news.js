@@ -1,124 +1,172 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const News = require('../models/News');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 
-// Get all news
+// ─────────────────────────────────────────────
+// GET /api/news
+// ─────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
     const { category, search } = req.query;
-    let filter = {}; if (category) { filter.category = category; } if (search) { filter.$or = [ { title: { $regex: search, $options: 'i' } }, { content: { $regex: search, $options: 'i' } }, { excerpt: { $regex: search, $options: 'i' } } ]; }
-    
+    let filter = {};
+
+    if (category) filter.category = category;
+    if (search) {
+      filter.$or = [
+        { title:   { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { excerpt: { $regex: search, $options: 'i' } }
+      ];
+    }
+
     const news = await News.find(filter)
       .populate('category', 'name slug')
       .sort({ createdAt: -1 });
-    
+
     res.json(news);
   } catch (error) {
     console.error('Get news error:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลข่าว' });
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลข่าว', error: error.message });
   }
 });
 
-// Get single news
-router.get('/:id', async (req, res) => {
-  try {
-    const news = await News.findById(req.params.id).populate('category', 'name slug');
-    
-    if (!news) {
-      return res.status(404).json({ message: 'ไม่พบข่าว' });
-    }
-    
-    // เพิ่มจำนวนผู้เข้าชม
-    news.views += 1;
-    await news.save();
-    
-    res.json(news);
-  } catch (error) {
-    console.error('Get news error:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด' });
-  }
-});
-
-// Get news by category
+// ─────────────────────────────────────────────
+// ✅ GET /api/news/category/:categoryId
+// ต้องอยู่เหนือ /:id เสมอ ไม่งั้น Express จะตีความ
+// "category" ว่าเป็น :id แล้วพัง
+// ─────────────────────────────────────────────
 router.get('/category/:categoryId', async (req, res) => {
   try {
     const news = await News.find({ category: req.params.categoryId })
       .populate('category', 'name slug')
       .sort({ createdAt: -1 });
-    
+
     res.json(news);
   } catch (error) {
     console.error('Get news by category error:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด' });
+    res.status(500).json({ message: 'เกิดข้อผิดพลาด', error: error.message });
   }
 });
 
-// Create news (Admin only)
+// ─────────────────────────────────────────────
+// GET /api/news/:id
+// ─────────────────────────────────────────────
+router.get('/:id', async (req, res) => {
+  try {
+    // ✅ ตรวจ ObjectId ก่อน findById ป้องกัน CastError → 500
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
+    }
+
+    const news = await News.findById(req.params.id).populate('category', 'name slug');
+
+    if (!news) {
+      return res.status(404).json({ message: 'ไม่พบข่าว' });
+    }
+
+    news.views += 1;
+    await news.save();
+
+    res.json(news);
+  } catch (error) {
+    console.error('Get single news error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาด', error: error.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// POST /api/news  (Admin only)
+// ─────────────────────────────────────────────
 router.post('/', auth, admin, async (req, res) => {
   try {
     const { title, content, excerpt, image, category, author } = req.body;
-    
-    const news = new News({
-      title,
-      content,
-      excerpt,
-      image,
-      category,
-      author
-    });
-    
+
+    // ✅ ตรวจ category เป็น valid ObjectId ก่อนบันทึก
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: 'หมวดหมู่ไม่ถูกต้อง' });
+    }
+
+    const news = new News({ title, content, excerpt, image, category, author });
     await news.save();
+
     const populatedNews = await News.findById(news._id).populate('category', 'name slug');
-    
     res.status(201).json({ message: 'สร้างข่าวสำเร็จ', news: populatedNews });
+
   } catch (error) {
     console.error('Create news error:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการสร้างข่าว' });
+    // ✅ แยก ValidationError ออกมาให้ชัด ไม่ให้กลายเป็น 500 ลึกลับ
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ message: `ข้อมูลไม่ครบถ้วน: ${messages}` });
+    }
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการสร้างข่าว', error: error.message });
   }
 });
 
-// Update news (Admin only)
+// ─────────────────────────────────────────────
+// PUT /api/news/:id  (Admin only)
+// ─────────────────────────────────────────────
 router.put('/:id', auth, admin, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
+    }
+
     const { title, content, excerpt, image, category, author } = req.body;
-    
+
+    // ✅ ตรวจ category ถ้าส่งมา
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: 'หมวดหมู่ไม่ถูกต้อง' });
+    }
+
     const news = await News.findById(req.params.id);
     if (!news) {
       return res.status(404).json({ message: 'ไม่พบข่าว' });
     }
-    
-    if (title) news.title = title;
-    if (content) news.content = content;
-    if (excerpt) news.excerpt = excerpt;
-    if (image) news.image = image;
+
+    if (title)    news.title    = title;
+    if (content)  news.content  = content;
+    if (excerpt !== undefined) news.excerpt = excerpt; // ✅ รองรับค่าว่าง ''
+    if (image)    news.image    = image;
     if (category) news.category = category;
-    if (author) news.author = author;
-    
+    if (author !== undefined)  news.author  = author;
+
     await news.save();
+
     const populatedNews = await News.findById(news._id).populate('category', 'name slug');
-    
     res.json({ message: 'อัปเดตข่าวสำเร็จ', news: populatedNews });
+
   } catch (error) {
     console.error('Update news error:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการอัปเดตข่าว' });
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ message: `ข้อมูลไม่ครบถ้วน: ${messages}` });
+    }
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการอัปเดตข่าว', error: error.message });
   }
 });
 
-// Delete news (Admin only)
+// ─────────────────────────────────────────────
+// DELETE /api/news/:id  (Admin only)
+// ─────────────────────────────────────────────
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
-    const news = await News.findById(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
+    }
+
+    const news = await News.findByIdAndDelete(req.params.id);
     if (!news) {
       return res.status(404).json({ message: 'ไม่พบข่าว' });
     }
-    
-    await News.findByIdAndDelete(req.params.id);
+
     res.json({ message: 'ลบข่าวสำเร็จ' });
   } catch (error) {
     console.error('Delete news error:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบข่าว' });
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบข่าว', error: error.message });
   }
 });
 
