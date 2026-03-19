@@ -41,6 +41,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/categories', require('./routes/category'));
 app.use('/api/news', require('./routes/news'));
 app.use('/api/comments', require('./routes/comment'));
+app.use('/api/videos', require('./routes/videos'));
 
 
 // Health check

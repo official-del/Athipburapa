@@ -32,7 +32,6 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401) {
-      // Token หมดอายุหรือไม่ Valid → ล้าง Token และ Redirect ไปหน้า Login
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
@@ -52,8 +51,8 @@ api.interceptors.response.use(
 // --- Auth ---
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
-  logout: () => {
+  login:    (data) => api.post('/auth/login', data),
+  logout:   () => {
     localStorage.removeItem('token');
     return api.post('/auth/logout');
   },
@@ -62,11 +61,11 @@ export const authAPI = {
 
 // --- News ---
 export const newsAPI = {
-  getAll: (params) => api.get('/news', { params }),
-  getById: (id) => api.get(`/news/${id}`),
-  create: (data) => api.post('/news', data),
-  update: (id, data) => api.put(`/news/${id}`, data),
-  delete: (id) => api.delete(`/news/${id}`),
+  getAll:  (params)      => api.get('/news', { params }),
+  getById: (id)          => api.get(`/news/${id}`),
+  create:  (data)        => api.post('/news', data),
+  update:  (id, data)    => api.put(`/news/${id}`, data),
+  delete:  (id)          => api.delete(`/news/${id}`),
 };
 
 // --- Category ---
@@ -77,8 +76,17 @@ export const categoryAPI = {
 // --- Comment ---
 export const commentAPI = {
   getByNewsId: (newsId) => api.get(`/comments/news/${newsId}`),
-  create: (data) => api.post('/comments', data),
-  delete: (id) => api.delete(`/comments/${id}`),
+  create:      (data)   => api.post('/comments', data),
+  delete:      (id)     => api.delete(`/comments/${id}`),
+};
+
+// --- Video ---
+export const videoAPI = {
+  getAll:  (params)   => api.get('/videos', { params }),
+  getById: (id)       => api.get(`/videos/${id}`),
+  // create ใช้ FormData (multipart) — เรียกตรงผ่าน api instance ใน component
+  update:  (id, data) => api.put(`/videos/${id}`, data),
+  delete:  (id)       => api.delete(`/videos/${id}`),
 };
 
 export default api;
