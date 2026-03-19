@@ -572,3 +572,21 @@
     display: flex;   /* แสดงใน drawer แทน */
   }
 }
+
+.nb-cat-video {
+  color: #18a86b;
+  font-weight: 700;
+}
+
+.nb-cat-video .nb-video-icon {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.nb-drawer-video {
+  color: #18a86b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

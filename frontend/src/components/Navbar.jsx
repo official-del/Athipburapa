@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut } from "react-icons/io5";
+import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut, IoVideocamOutline } from "react-icons/io5";
 import { CiSearch } from "react-icons/ci";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -25,22 +25,16 @@ function Navbar() {
   const searchRef = useRef(null);
   const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
 
-  // 1. Fetch Categories จาก DB ครั้งเดียว
   useEffect(() => {
     categoryAPI.getAll()
-      .then(res => {
-        setCategories(res.data);
-      })
+      .then(res => setCategories(res.data))
       .catch(err => console.error('Error fetching categories:', err));
   }, []);
 
-  // 2. Logic การแปลภาษาที่รองรับการสลับกลับเป็น TH แบบ Real-time
   useEffect(() => {
     const updateNames = async () => {
       if (categories.length === 0) return;
-      
       const rawNames = categories.map(c => c.name);
-
       if (lang === 'en') {
         const translated = await translateBatch(rawNames, { from: 'th', to: 'en' });
         setDisplayCats(translated);
@@ -48,7 +42,6 @@ function Navbar() {
         setDisplayCats(rawNames);
       }
     };
-
     updateNames();
   }, [lang, categories]);
 
@@ -75,7 +68,8 @@ function Navbar() {
   };
 
   const path = location.pathname;
-  const isAllActive = path === '/news';
+  const isAllActive   = path === '/news';
+  const isVideoActive = path === '/videos';
   const activeCat = path.startsWith('/news/category/')
     ? decodeURIComponent(path.split('/news/category/')[1])
     : null;
@@ -122,11 +116,15 @@ function Navbar() {
                       <IoPerson /> {t('nav_profile')}
                     </Link>
 
-                    {/* แสดงเฉพาะ admin */}
                     {user.role === 'admin' && (
-                      <Link to="/admin" onClick={() => setShowUserMenu(false)}>
-                        <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
-                      </Link>
+                      <>
+                        <Link to="/admin" onClick={() => setShowUserMenu(false)}>
+                          <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
+                        </Link>
+                        <Link to="/admin/videos" onClick={() => setShowUserMenu(false)}>
+                          <IoVideocamOutline /> จัดการวิดีโอ
+                        </Link>
+                      </>
                     )}
 
                     <button onClick={handleLogout}>
@@ -141,6 +139,7 @@ function Navbar() {
           </div>
         </div>
 
+        {/* ── Category Bar ── */}
         <div className="nb-cats">
           <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
             {t('nav_allNews')}
@@ -154,6 +153,15 @@ function Navbar() {
               {displayCats[i] || cat.name}
             </Link>
           ))}
+
+          {/* ── Video Link ── */}
+          <Link
+            to="/videos"
+            className={`nb-cat-link nb-cat-video${isVideoActive ? ' active' : ''}`}
+          >
+            <IoVideocamOutline className="nb-video-icon" />
+            {lang === 'en' ? 'Videos' : 'วิดีโอ'}
+          </Link>
         </div>
       </nav>
 
@@ -189,7 +197,6 @@ function Navbar() {
               <IoClose />
             </button>
 
-            {/* Lang Switcher ใน Drawer */}
             <div className="nb-drawer-lang">
               <div className="nb-lang-switcher">
                 <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>TH</button>
@@ -211,13 +218,24 @@ function Navbar() {
                   {displayCats[i] || cat.name}
                 </Link>
               ))}
+
+              {/* Video ใน Drawer */}
+              <Link
+                to="/videos"
+                className="nb-drawer-cat nb-drawer-video"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                <IoVideocamOutline /> {lang === 'en' ? 'Videos' : 'วิดีโอ'}
+              </Link>
             </div>
 
-            {/* Admin link ใน Drawer เฉพาะ admin */}
             {user?.role === 'admin' && (
               <div className="nb-drawer-admin">
                 <Link to="/admin" className="nb-drawer-admin-link" onClick={() => setShowMobileMenu(false)}>
                   <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
+                </Link>
+                <Link to="/admin/videos" className="nb-drawer-admin-link" onClick={() => setShowMobileMenu(false)}>
+                  <IoVideocamOutline /> จัดการวิดีโอ
                 </Link>
               </div>
             )}
