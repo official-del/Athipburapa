@@ -189,19 +189,19 @@
   position: absolute; inset: 0;
   background: linear-gradient(
     to top,
-    rgba(0,0,0,0.88) 0%,
-    rgba(0,0,0,0.4)  45%,
-    rgba(0,0,0,0.05) 100%
+    rgba(0,0,0,0.75) 0%,
+    rgba(0,0,0,0.35) 30%,
+    transparent     60%   /* ← เพิ่มจุดนี้ */
   );
 }
 
 .nh-slide-body {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  padding: 20px 24px 32px;
+  padding: 16px 18px 16px;   /* ← ลดจาก 20px 24px 32px */
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nh-slide-cat {
