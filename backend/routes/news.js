@@ -56,7 +56,6 @@ router.get('/category/:categoryId', async (req, res) => {
 // ─────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
   try {
-    // ✅ ตรวจ ObjectId ก่อน findById ป้องกัน CastError → 500
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
     }
@@ -82,14 +81,15 @@ router.get('/:id', async (req, res) => {
 // ─────────────────────────────────────────────
 router.post('/', auth, admin, async (req, res) => {
   try {
-    const { title, content, excerpt, image, category, author } = req.body;
+    // ✅ เพิ่ม albumImages
+    const { title, content, excerpt, image, category, author, albumImages } = req.body;
 
-    // ✅ ตรวจ category เป็น valid ObjectId ก่อนบันทึก
     if (!mongoose.Types.ObjectId.isValid(category)) {
       return res.status(400).json({ message: 'หมวดหมู่ไม่ถูกต้อง' });
     }
 
-    const news = new News({ title, content, excerpt, image, category, author });
+    // ✅ ส่ง albumImages เข้า constructor ด้วย
+    const news = new News({ title, content, excerpt, image, category, author, albumImages });
     await news.save();
 
     const populatedNews = await News.findById(news._id).populate('category', 'name slug');
@@ -97,7 +97,6 @@ router.post('/', auth, admin, async (req, res) => {
 
   } catch (error) {
     console.error('Create news error:', error);
-    // ✅ แยก ValidationError ออกมาให้ชัด ไม่ให้กลายเป็น 500 ลึกลับ
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(e => e.message).join(', ');
       return res.status(400).json({ message: `ข้อมูลไม่ครบถ้วน: ${messages}` });
@@ -115,9 +114,9 @@ router.put('/:id', auth, admin, async (req, res) => {
       return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
     }
 
-    const { title, content, excerpt, image, category, author } = req.body;
+    // ✅ เพิ่ม albumImages
+    const { title, content, excerpt, image, category, author, albumImages } = req.body;
 
-    // ✅ ตรวจ category ถ้าส่งมา
     if (category && !mongoose.Types.ObjectId.isValid(category)) {
       return res.status(400).json({ message: 'หมวดหมู่ไม่ถูกต้อง' });
     }
@@ -127,12 +126,14 @@ router.put('/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ message: 'ไม่พบข่าว' });
     }
 
-    if (title)    news.title    = title;
-    if (content)  news.content  = content;
-    if (excerpt !== undefined) news.excerpt = excerpt; // ✅ รองรับค่าว่าง ''
-    if (image)    news.image    = image;
-    if (category) news.category = category;
-    if (author !== undefined)  news.author  = author;
+    if (title)                 news.title    = title;
+    if (content)               news.content  = content;
+    if (excerpt !== undefined) news.excerpt  = excerpt;
+    if (image)                 news.image    = image;
+    if (category)              news.category = category;
+    if (author !== undefined)  news.author   = author;
+    // ✅ ต้องเช็ค Array.isArray เพราะ [] เป็น falsy ใน if ธรรมดา
+    if (Array.isArray(albumImages)) news.albumImages = albumImages;
 
     await news.save();
 
