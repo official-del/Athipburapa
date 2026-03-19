@@ -1,34 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Noto+Serif+Thai:wght@700;800&display=swap');
 
 :root {
-  --nh-green:       #16a34a;
-  --nh-green-dk:    #15803d;
-  --nh-green-lt:    #dcfce7;
-  --nh-green-pale:  #f0fdf4;
-  --nh-white:       #ffffff;
-  --nh-gray-bg:     #f9fafb;
-  --nh-gray-line:   #e5e7eb;
-  --nh-text:        #1a1a1a;
-  --nh-text-dim:    #6b7280;
-  --nh-text-sm:     #9ca3af;
-  --nh-radius:      12px;
-  --nh-shadow:      0 4px 20px rgba(0,0,0,0.08);
+  --nh-green:      #16a34a;
+  --nh-green-dk:   #15803d;
+  --nh-green-lt:   #dcfce7;
+  --nh-green-pale: #f0fdf4;
+  --nh-white:      #ffffff;
+  --nh-gray-bg:    #f9fafb;
+  --nh-gray-line:  #e5e7eb;
+  --nh-text:       #1a1a1a;
+  --nh-text-dim:   #6b7280;
+  --nh-text-sm:    #9ca3af;
+  --nh-radius:     12px;
+  --nh-shadow:     0 4px 20px rgba(0,0,0,0.08);
 }
 
-/* ================================================
-   ROOT
-   ================================================ */
+/* ── Root ── */
 .nh-root {
   font-family: 'Sarabun', sans-serif;
   background: var(--nh-white);
   max-width: 1280px;
   margin: 0 auto;
   padding: 28px 28px 32px;
+  position: relative;
 }
 
-/* ================================================
-   PAGE TITLE
-   ================================================ */
+/* ── Translating Bar ── */
+.nh-translating-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--nh-green);
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  background: var(--nh-green-pale);
+  border: 1px solid var(--nh-green-lt);
+  border-radius: 8px;
+}
+
+.nh-translating-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nh-green);
+  animation: nh-bounce 1s infinite;
+}
+
+.nh-translating-dot:nth-child(2) { animation-delay: 0.15s; }
+.nh-translating-dot:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes nh-bounce {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+  40%            { transform: scale(1.1); opacity: 1;   }
+}
+
+/* fade เนื้อหาขณะแปล */
+.nh-fading { opacity: 0.55; transition: opacity 0.25s; pointer-events: none; }
+
+/* ── Page Title ── */
 .nh-title-wrap {
   display: flex;
   align-items: center;
@@ -36,15 +67,18 @@
   gap: 16px;
   margin-bottom: 14px;
 }
+
 .nh-title-line {
   flex: 1;
   max-width: 200px;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--nh-green));
 }
+
 .nh-title-wrap .nh-title-line:last-child {
   background: linear-gradient(90deg, var(--nh-green), transparent);
 }
+
 .nh-title {
   font-family: 'Noto Serif Thai', serif;
   font-size: 28px;
@@ -54,9 +88,7 @@
   letter-spacing: 1px;
 }
 
-/* ================================================
-   BREADCRUMB
-   ================================================ */
+/* ── Breadcrumb ── */
 .nh-breadcrumb {
   display: flex;
   align-items: center;
@@ -68,6 +100,7 @@
   margin-bottom: 16px;
   font-size: 13px;
 }
+
 .nh-bc-home {
   display: flex;
   align-items: center;
@@ -77,19 +110,19 @@
   font-weight: 600;
   transition: color 0.15s;
 }
-.nh-bc-home:hover { color: var(--nh-green-dk); }
-.nh-bc-sep     { color: var(--nh-text-sm); font-size: 15px; }
-.nh-bc-current { color: var(--nh-text-dim); font-weight: 500; }
 
-/* ================================================
-   CATEGORY PILLS
-   ================================================ */
+.nh-bc-home:hover { color: var(--nh-green-dk); }
+.nh-bc-sep        { color: var(--nh-text-sm); font-size: 15px; }
+.nh-bc-current    { color: var(--nh-text-dim); font-weight: 500; }
+
+/* ── Category Pills ── */
 .nh-cats {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 20px;
 }
+
 .nh-cat-pill {
   text-decoration: none;
   font-size: 13px;
@@ -102,39 +135,36 @@
   transition: background 0.18s, color 0.18s, transform 0.15s, box-shadow 0.18s;
   white-space: nowrap;
 }
+
 .nh-cat-pill:hover {
   background: var(--nh-green);
   color: var(--nh-white);
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(22,163,74,0.25);
 }
+
 .nh-cat-pill.active {
   background: var(--nh-green);
   color: var(--nh-white);
   box-shadow: 0 4px 10px rgba(22,163,74,0.25);
 }
 
-/* ================================================
-   BODY GRID
-   ================================================ */
+/* ── Body Grid ── */
 .nh-body {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 20px;
-  /* ให้ทั้ง 2 คอลัมน์สูงเท่ากัน */
   align-items: stretch;
+  transition: opacity 0.25s;
 }
 
-/* ================================================
-   SLIDER
-   ================================================ */
+/* ── Slider ── */
 .nh-slider {
   position: relative;
   border-radius: var(--nh-radius);
   overflow: hidden;
   box-shadow: var(--nh-shadow);
   background: #000;
-  /* ความสูง slider ถูกกำหนดโดย aspect-ratio ของ .nh-slide */
 }
 
 .nh-slide {
@@ -146,11 +176,13 @@
 }
 
 .nh-slide-img-wrap { position: absolute; inset: 0; }
+
 .nh-slide-img {
   width: 100%; height: 100%;
   object-fit: cover; display: block;
   transition: transform 0.6s ease;
 }
+
 .nh-slider:hover .nh-slide-img { transform: scale(1.03); }
 
 .nh-slide-overlay {
@@ -166,7 +198,7 @@
 .nh-slide-body {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  padding: 20px 24px 24px;
+  padding: 20px 24px 32px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -197,8 +229,27 @@
   overflow: hidden;
 }
 
-.nh-slide-date { font-size: 12px; color: rgba(255,255,255,0.65); }
+.nh-slide-date {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
 
+/* slide counter */
+.nh-slide-counter {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  z-index: 5;
+}
+
+/* arrows */
 .nh-arrow {
   position: absolute;
   top: 50%; transform: translateY(-50%);
@@ -212,19 +263,23 @@
   transition: background 0.15s, transform 0.15s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
+
 .nh-arrow:hover {
   background: var(--nh-green); color: #fff;
   transform: translateY(-50%) scale(1.08);
 }
+
 .nh-arrow.left  { left: 12px; }
 .nh-arrow.right { right: 12px; }
 
+/* dots */
 .nh-dots {
   position: absolute;
   bottom: 14px; left: 50%;
   transform: translateX(-50%);
   display: flex; gap: 6px; z-index: 10;
 }
+
 .nh-dot {
   width: 8px; height: 8px;
   border-radius: 50%; border: none;
@@ -232,16 +287,14 @@
   cursor: pointer; padding: 0;
   transition: background 0.2s, width 0.25s;
 }
+
 .nh-dot.active {
   background: var(--nh-green);
   width: 22px; border-radius: 4px;
 }
 
-/* ================================================
-   SIDE NEWS — สูงเท่า slider, scroll ภายใน
-   ================================================ */
+/* ── Side News ── */
 .nh-side {
-  /* สูงเท่ากับ row (ซึ่งถูก stretch จาก slider) */
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -251,11 +304,10 @@
   box-shadow: var(--nh-shadow);
   overflow-y: auto;
   overflow-x: hidden;
-
-  /* custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: var(--nh-green-lt) transparent;
 }
+
 .nh-side::-webkit-scrollbar       { width: 4px; }
 .nh-side::-webkit-scrollbar-track { background: transparent; }
 .nh-side::-webkit-scrollbar-thumb {
@@ -263,6 +315,30 @@
   border-radius: 4px;
 }
 .nh-side::-webkit-scrollbar-thumb:hover { background: var(--nh-green); }
+
+/* side header */
+.nh-side-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nh-green-dk);
+  border-bottom: 2px solid var(--nh-green-lt);
+  position: sticky;
+  top: 0;
+  background: var(--nh-white);
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.nh-side-header-dot {
+  width: 8px; height: 8px;
+  background: var(--nh-green);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
 .nh-side-item {
   display: grid;
@@ -273,10 +349,11 @@
   text-decoration: none;
   border-bottom: 1px solid var(--nh-gray-line);
   transition: background 0.15s;
-  flex-shrink: 0;   /* ไม่ให้ item หดตัว */
+  flex-shrink: 0;
 }
+
 .nh-side-item:last-child { border-bottom: none; }
-.nh-side-item:hover { background: var(--nh-green-pale); }
+.nh-side-item:hover      { background: var(--nh-green-pale); }
 
 .nh-side-img-wrap {
   border-radius: 8px;
@@ -284,11 +361,13 @@
   aspect-ratio: 4/3;
   flex-shrink: 0;
 }
+
 .nh-side-img {
   width: 100%; height: 100%;
   object-fit: cover; display: block;
   transition: transform 0.3s;
 }
+
 .nh-side-item:hover .nh-side-img { transform: scale(1.06); }
 
 .nh-side-content {
@@ -309,19 +388,19 @@
   overflow: hidden;
   transition: color 0.15s;
 }
+
 .nh-side-item:hover .nh-side-title { color: var(--nh-green); }
 
-.nh-side-meta { display: flex; flex-direction: column; gap: 2px; }
-.nh-side-cat  { font-size: 11px; font-weight: 700; color: var(--nh-green); }
-.nh-side-date { font-size: 11px; color: var(--nh-text-sm); }
+.nh-side-meta  { display: flex; flex-direction: column; gap: 2px; }
+.nh-side-cat   { font-size: 11px; font-weight: 700; color: var(--nh-green); }
+.nh-side-date  { font-size: 11px; color: var(--nh-text-sm); }
 
-/* ================================================
-   SKELETON
-   ================================================ */
+/* ── Skeleton ── */
 @keyframes nh-shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
 .nh-skeleton-title {
   height: 36px; width: 120px; border-radius: 8px;
   margin: 0 auto 14px;
@@ -329,19 +408,22 @@
   background-size: 200% 100%;
   animation: nh-shimmer 1.2s infinite;
 }
+
 .nh-skeleton-cats {
   height: 36px; border-radius: 999px; margin-bottom: 20px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: nh-shimmer 1.2s infinite;
 }
+
 .nh-skeleton-slider {
   aspect-ratio: 16/10; border-radius: var(--nh-radius);
   background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: nh-shimmer 1.2s infinite;
 }
-.nh-skeleton-side { display: flex; flex-direction: column; gap: 10px; }
+
+.nh-skeleton-side    { display: flex; flex-direction: column; gap: 10px; }
 .nh-skeleton-side-item {
   height: 76px; border-radius: 8px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
@@ -349,9 +431,7 @@
   animation: nh-shimmer 1.2s infinite;
 }
 
-/* ================================================
-   RESPONSIVE
-   ================================================ */
+/* ── Responsive ── */
 @media (max-width: 1024px) {
   .nh-body { grid-template-columns: 1fr 280px; }
   .nh-root { padding: 24px 20px 28px; }
@@ -359,10 +439,7 @@
 
 @media (max-width: 768px) {
   .nh-body { grid-template-columns: 1fr; align-items: start; }
-  .nh-side {
-    height: auto;
-    max-height: 320px; /* บน mobile แสดงบางส่วนแล้ว scroll */
-  }
+  .nh-side { height: auto; max-height: 320px; }
   .nh-slide-title { font-size: 15px; }
   .nh-title { font-size: 22px; }
   .nh-root { padding: 20px 16px 24px; }
@@ -370,7 +447,7 @@
 }
 
 @media (max-width: 480px) {
-  .nh-title { font-size: 20px; }
-  .nh-cats { gap: 6px; }
-  .nh-arrow { width: 30px; height: 30px; font-size: 16px; }
+  .nh-title  { font-size: 20px; }
+  .nh-cats   { gap: 6px; }
+  .nh-arrow  { width: 30px; height: 30px; font-size: 16px; }
 }
