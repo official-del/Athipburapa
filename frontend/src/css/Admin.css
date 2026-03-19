@@ -1,168 +1,548 @@
+/* ══════════════════════════════════════════
+   Admin.css — ธีมขาว-เขียว (ตรงกับ AdminVideo)
+   ══════════════════════════════════════════ */
+
+/* ── Root ── */
 .admin-page {
-  background-color: #f5f5f5;
   min-height: 100vh;
+  background: #f7faf8;
+  font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
 }
 
+/* ── Notification ── */
+.admin-notification {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  animation: adm-slide-in 0.3s ease;
+  /* ✅ ป้องกันกระตุก: กำหนด width ตายตัว */
+  min-width: 260px;
+  max-width: 380px;
+}
+
+@keyframes adm-slide-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.admin-notification--success { background: #18a86b; color: #fff; }
+.admin-notification--error   { background: #e74c3c; color: #fff; }
+
+/* ── Container ── */
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 32px 20px 60px;
 }
 
+/* ── Header ── */
 .admin-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  gap: 16px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
 }
 
 .admin-header h1 {
   font-size: 1.8rem;
-  color: #333;
+  font-weight: 800;
+  color: #0d6e3f;
+  margin: 0;
 }
 
+/* ── Add Button ── */
 .add-news-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: #333;
-  color: white;
+  gap: 8px;
+  background: #18a86b;
+  color: #fff;
   border: none;
-  padding: 0.7rem 1.2rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.3s;
-}
-
-.add-news-btn:hover {
-  background-color: #555;
-}
-
-.admin-table-container {
-  background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 12px 22px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.add-news-btn:hover { background: #0d6e3f; transform: translateY(-1px); }
+
+/* ── Loading / Error / Empty ── */
+.admin-loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: #6a8c74;
+  font-size: 1rem;
+}
+
+.admin-error {
+  text-align: center;
+  padding: 80px 20px;
+  color: #e74c3c;
+}
+
+.admin-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #8aaa92;
+  font-size: 0.95rem;
+}
+
+/* ── Table ── */
+.admin-table-container {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  border: 1px solid #e8f3eb;
   overflow-x: auto;
+  /* ✅ ป้องกันกระตุกจาก scrollbar */
+  overflow-y: hidden;
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
+  /* ✅ table-layout fixed ป้องกันคอลัมน์กระโดด */
+  table-layout: auto;
+}
+
+.admin-table thead tr {
+  background: linear-gradient(90deg, #0d6e3f, #18a86b);
 }
 
 .admin-table th {
-  background-color: #fafafa;
-  padding: 1.2rem;
-  font-weight: 600;
-  color: #666;
-  border-bottom: 1px solid #eee;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 14px 16px;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .admin-table td {
-  padding: 1.2rem;
-  border-bottom: 1px solid #eee;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  color: #2a4a34;
+  border-bottom: 1px solid #f0f7f2;
   vertical-align: middle;
+  /* ✅ ป้องกันข้อความยาวทำให้ layout กระตุก */
+  word-break: break-word;
 }
 
+.admin-table tr:last-child td { border-bottom: none; }
+/* ✅ ใช้ background แทน transform เพื่อป้องกัน reflow */
+.admin-table tbody tr { transition: background 0.15s; }
+.admin-table tbody tr:hover { background: #f7fbf8; }
+
+/* ── Thumbnail ── */
 .admin-news-thumb {
-  width: 80px;
-  height: 50px;
+  width: 90px;
+  height: 56px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
+  display: block;
+  /* ✅ กำหนด size ตายตัวป้องกัน layout shift */
+  min-width: 90px;
+  min-height: 56px;
+  background: #d4ead8;
 }
 
+/* ── Title ── */
 .admin-news-title {
-  font-weight: 500;
-  color: #333;
-  max-width: 400px;
+  font-weight: 600;
+  color: #1a2e20;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ── Category / Album badges ── */
+.admin-table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+.album-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e8f7ef;
+  color: #18a86b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.album-badge-none {
+  color: #c8d8cc;
+  font-size: 1rem;
+}
+
+.admin-album-count { white-space: nowrap; }
+
+/* ── Action Buttons ── */
 .admin-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
+  /* ✅ กำหนด width ตายตัวป้องกันคอลัมน์กระโดด */
+  min-width: 88px;
 }
 
 .edit-btn, .delete-btn {
-  background: none;
-  border: 1px solid #ddd;
-  padding: 0.5rem;
-  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: none;
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.2s;
-}
-
-.edit-btn { color: #3498db; }
-.edit-btn:hover { background-color: #3498db; color: white; border-color: #3498db; }
-
-.delete-btn { color: #e74c3c; }
-.delete-btn:hover { background-color: #e74c3c; color: white; border-color: #e74c3c; }
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+  font-size: 1rem;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
 }
 
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 700px;
-  max-height: 90vh;
+.edit-btn  { background: #e8f7ef; color: #18a86b; }
+.edit-btn:hover  { background: #18a86b; color: #fff; }
+.delete-btn { background: #fdf0ef; color: #e74c3c; }
+.delete-btn:hover { background: #e74c3c; color: #fff; }
+
+/* ── Modal Overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+  animation: adm-fade 0.2s ease;
+  /* ✅ ป้องกัน overlay ทำให้ page scroll กระตุก */
   overflow-y: auto;
 }
 
-.modal-content h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
+@keyframes adm-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Modal Content ── */
+.modal-content {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 700px;
+  /* ✅ ใช้ margin auto แทน transform เพื่อลด reflow */
+  margin: auto;
+  padding: 28px;
+  animation: adm-up 0.25s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  position: relative;
 }
 
+.modal-confirm {
+  max-width: 440px;
+}
+
+.modal-confirm p {
+  color: #4a6e54;
+  line-height: 1.65;
+  margin: 0 0 8px;
+}
+
+@keyframes adm-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-content h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0d6e3f;
+  margin: 0 0 24px;
+}
+
+/* ── Form Groups ── */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #2a4a34;
+  margin-bottom: 6px;
+}
+
+.required { color: #e74c3c; margin-left: 2px; }
+.form-optional { color: #8aaa92; font-weight: 400; margin-left: 4px; }
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  border: 1.5px solid #d4ead8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #1a2e20;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #18a86b;
+  box-shadow: 0 0 0 3px rgba(24,168,107,0.12);
+}
+
+.form-group--error input,
+.form-group--error select,
+.form-group--error textarea {
+  border-color: #e74c3c;
+}
+
+.form-error-msg {
+  display: block;
+  font-size: 0.8rem;
+  color: #e74c3c;
+  margin-top: 4px;
+}
+
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+/* ── Image Preview ── */
+.admin-img-preview {
+  display: none;
+  margin-top: 10px;
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1.5px solid #d4ead8;
+}
+
+/* ── Album Editor ── */
+.album-editor {
+  border: 1.5px solid #d4ead8;
+  border-radius: 10px;
+  padding: 14px;
+  background: #f7faf8;
+}
+
+.album-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.album-url-input {
+  flex: 1;
+  border: 1.5px solid #d4ead8 !important;
+  border-radius: 8px !important;
+  padding: 9px 12px !important;
+  font-size: 0.9rem !important;
+  min-width: 0;
+}
+
+.album-url-input:focus {
+  border-color: #18a86b !important;
+  box-shadow: 0 0 0 3px rgba(24,168,107,0.12) !important;
+}
+
+.album-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #18a86b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.album-add-btn:hover:not(:disabled) { background: #0d6e3f; }
+.album-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.album-empty-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #8aaa92;
+  margin: 0;
+}
+
+.album-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.album-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e8f3eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.album-order-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.album-order-btns button {
+  background: #f0f7f2;
+  border: none;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  color: #3a6e4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+}
+
+.album-order-btns button:hover:not(:disabled) { background: #d4ead8; }
+.album-order-btns button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.album-thumb {
+  width: 64px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #d4ead8;
+}
+
+.album-url-label {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #6a8c74;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.album-remove-btn {
+  background: #fdf0ef;
+  color: #e74c3c;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.album-remove-btn:hover:not(:disabled) { background: #e74c3c; color: #fff; }
+.album-remove-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Modal Actions ── */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f7f2;
 }
 
 .cancel-btn {
-  background: #eee;
+  background: #f0f7f2;
+  color: #3a6e4a;
   border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 6px;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
 }
+
+.cancel-btn:hover:not(:disabled) { background: #d4ead8; }
+.cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .save-btn {
-  background: #333;
-  color: white;
+  background: #18a86b;
+  color: #fff;
   border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 6px;
+  border-radius: 10px;
+  padding: 11px 28px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-.admin-loading {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
+.save-btn:hover:not(:disabled) { background: #0d6e3f; }
+.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* delete ใน confirm modal */
+.modal-actions .delete-btn {
+  width: auto;
+  height: auto;
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 700;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
 }
 
-.admin-error {
-  text-align: center;
-  padding: 5rem 1rem;
-  color: #e74c3c;
-}
+.modal-actions .delete-btn:hover:not(:disabled) { background: #c0392b; }
+.modal-actions .delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .admin-news-title { max-width: 160px; }
+  .modal-content { padding: 20px; }
+  .modal-actions { flex-direction: column; }
+  .save-btn, .cancel-btn { width: 100%; text-align: center; }
+  .album-input-row { flex-direction: column; }
+  .album-add-btn { width: 100%; justify-content: center; }
+}
