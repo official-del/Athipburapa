@@ -13,24 +13,22 @@ function Navbar() {
   const { lang, switchLang, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState([]);
-  const [displayCats, setDisplayCats] = useState([]); 
-  
+  const [displayCats, setDisplayCats] = useState([]);
+
   const searchRef = useRef(null);
 
-  // ดึงหมวดหมู่จาก API
   useEffect(() => {
     categoryAPI.getAll()
       .then(res => setCategories(res.data))
       .catch(err => console.error('Error fetching categories:', err));
   }, []);
 
-  // จัดการแปลภาษาหมวดหมู่
   useEffect(() => {
     const updateNames = async () => {
       if (categories.length === 0) return;
@@ -79,39 +77,69 @@ function Navbar() {
   return (
     <>
       <nav className="nb-root">
-        {/* --- Top Section --- */}
+
+        {/* ══════════════ TOP BAR (Red) ══════════════ */}
         <div className="nb-top">
-          <div className="nb-left">
+
+          {/* Left: Hamburger + Logo */}
+          <div className="nb-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="Menu">
               <IoMenu />
             </button>
+            <Link to="/" className="nb-logo">
+              <span className="nb-logo-main">ATHIPBURAPA</span>
+              <div className="nb-logo-sub">
+                <span className="nb-logo-sub-text">ข่าว</span>
+                <span className="nb-logo-online">ONLINE</span>
+              </div>
+            </Link>
           </div>
 
-          <div className="nb-center">
-            <Link to="/" className="nb-logo">Athip<span>burapa</span></Link>
+          {/* Center: Shortcut buttons (desktop only) */}
+          <div className="nb-shortcuts desktop-only">
+            <Link to="/news/category/ข่าวด่วน" className="nb-shortcut-btn">
+              <span className="nb-shortcut-icon green">🏠</span>
+              ข่าวด่วน
+            </Link>
+            <Link to="/news/category/เศรษฐกิจ" className="nb-shortcut-btn">
+              <span className="nb-shortcut-icon gold">💰</span>
+              เศรษฐกิจ
+            </Link>
+            <Link to="/news/category/หวย" className="nb-shortcut-btn">
+              <span className="nb-shortcut-icon blue">🎲</span>
+              ตรวจหวย
+            </Link>
+            <Link to="/news/category/ดวง" className="nb-shortcut-btn">
+              <span className="nb-shortcut-icon teal">⭐</span>
+              ดูดวง
+            </Link>
           </div>
 
+          {/* Right: Lang + Search + User */}
           <div className="nb-right">
             <div className="nb-lang-switcher desktop-only">
               <button className={`nb-lang-btn${lang === 'th' ? ' active' : ''}`} onClick={() => switchLang('th')}>TH</button>
               <button className={`nb-lang-btn${lang === 'en' ? ' active' : ''}`} onClick={() => switchLang('en')}>EN</button>
             </div>
-            
-            <button className="nb-icon-btn" onClick={() => setShowSearch(true)}><CiSearch /></button>
+
+            <button className="nb-search-pill" onClick={() => setShowSearch(true)}>
+              <CiSearch />
+              <span className="desktop-only">{lang === 'en' ? 'Search' : 'ค้นหา'}</span>
+            </button>
 
             {user ? (
               <div className="nb-profile-wrap">
                 <div className="nb-avatar-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
-                  {user.profileImage || user.image ? (
-                    <img src={user.profileImage || user.image} alt="Profile" />
-                  ) : <IoPerson />}
+                  {user.profileImage || user.image
+                    ? <img src={user.profileImage || user.image} alt="Profile" />
+                    : <IoPerson />}
                 </div>
 
                 {showUserMenu && (
                   <div className="nb-dropdown">
                     <div className="nb-dropdown-header">
-                        <span className="name">{user.username}</span>
-                        <span className="role">{user.role}</span>
+                      <span className="name">{user.username}</span>
+                      <span className="role">{user.role}</span>
                     </div>
                     <Link to="/profile" onClick={() => setShowUserMenu(false)}>
                       <IoPerson /> {t('nav_profile') || 'โปรไฟล์'}
@@ -140,10 +168,11 @@ function Navbar() {
           </div>
         </div>
 
-        {/* --- Desktop Category Bar --- */}
+        {/* ══════════════ BOTTOM CATEGORY BAR (Dark) ══════════════ */}
         <div className="nb-cats-bar">
+          {/* Home icon */}
           <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
-            {t('nav_allNews') || 'ข่าวทั้งหมด'}
+            🏠
           </Link>
           {categories.map((cat, i) => (
             <Link
@@ -160,14 +189,19 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* --- Search Overlay --- */}
+      {/* ══════════════ SEARCH OVERLAY ══════════════ */}
       {showSearch && (
         <>
           <div className="nb-overlay-backdrop" onClick={() => setShowSearch(false)} />
           <div className="nb-search-modal">
             <div className="nb-search-container">
               <form onSubmit={handleSearch}>
-                <input ref={searchRef} autoFocus type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="ค้นหาหัวข้อข่าวที่คุณสนใจ..." />
+                <input
+                  ref={searchRef} autoFocus type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ค้นหาหัวข้อข่าวที่คุณสนใจ..."
+                />
                 <button type="submit"><CiSearch /></button>
               </form>
               <button className="nb-close-search" onClick={() => setShowSearch(false)}><IoClose /></button>
@@ -176,7 +210,7 @@ function Navbar() {
         </>
       )}
 
-      {/* --- Mobile Responsive Drawer --- */}
+      {/* ══════════════ MOBILE DRAWER ══════════════ */}
       {showMobileMenu && (
         <>
           <div className="nb-overlay-backdrop" onClick={() => setShowMobileMenu(false)} />
@@ -186,7 +220,7 @@ function Navbar() {
                 {user ? (
                   <div className="nb-user-card">
                     <div className="nb-user-avatar">
-                      {user.image ? <img src={user.image} alt=""/> : <IoPerson />}
+                      {user.image ? <img src={user.image} alt="" /> : <IoPerson />}
                     </div>
                     <div className="nb-user-text">
                       <span className="nb-uname">{user.username}</span>
@@ -194,23 +228,26 @@ function Navbar() {
                     </div>
                   </div>
                 ) : (
-                  <Link to="/" className="nb-logo" onClick={() => setShowMobileMenu(false)}>Athip<span>burapa</span></Link>
+                  <Link to="/" className="nb-logo" onClick={() => setShowMobileMenu(false)}>
+                    <span className="nb-logo-main">ATHIPBURAPA</span>
+                    <span className="nb-logo-online">ONLINE</span>
+                  </Link>
                 )}
               </div>
               <button className="nb-close-drawer" onClick={() => setShowMobileMenu(false)}><IoClose /></button>
             </div>
 
             <div className="nb-drawer-body">
-              {/* Language Switcher for Mobile */}
+              {/* Language */}
               <div className="nb-drawer-section">
                 <span className="nb-drawer-label">Language / ภาษา</span>
                 <div className="nb-drawer-langs">
-                   <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>ไทย (TH)</button>
-                   <button onClick={() => handleSwitchLang('en')} className={lang === 'en' ? 'active' : ''}>English (EN)</button>
+                  <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>ไทย (TH)</button>
+                  <button onClick={() => handleSwitchLang('en')} className={lang === 'en' ? 'active' : ''}>English (EN)</button>
                 </div>
               </div>
 
-              {/* Navigation Group */}
+              {/* Menu */}
               <div className="nb-drawer-section">
                 <span className="nb-drawer-label">Menu / เมนู</span>
                 <Link to="/news" className={`nb-drawer-item ${isAllActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
@@ -221,7 +258,7 @@ function Navbar() {
                 </Link>
               </div>
 
-              {/* Categories Grid (ธีม Sidebar คลีนๆ) */}
+              {/* Categories */}
               <div className="nb-drawer-section">
                 <span className="nb-drawer-label">Categories / หมวดหมู่</span>
                 <div className="nb-drawer-grid">
@@ -238,7 +275,7 @@ function Navbar() {
                 </div>
               </div>
 
-              {/* Admin Panel Group */}
+              {/* Admin */}
               {user?.role === 'admin' && (
                 <div className="nb-drawer-section admin-tint">
                   <span className="nb-drawer-label">Admin Settings</span>
