@@ -4,8 +4,8 @@ import { authAPI } from '../services/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // true = ยังไม่รู้ว่า login อยู่หรือเปล่า
+  const [user, setUser]         = useState(null);
+  const [loading, setLoading]   = useState(true);
   const [authError, setAuthError] = useState(null);
   const isMounted = useRef(true);
 
@@ -23,7 +23,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.getMe();
       if (isMounted.current) {
-        setUser(response.data.user);
+        // ✅ แก้: /auth/me ส่งกลับ flat object ไม่มี .user wrapper
+        const userData = response.data.user ?? response.data;
+        setUser(userData);
         setAuthError(null);
       }
     } catch (error) {
@@ -79,6 +81,7 @@ export const AuthProvider = ({ children }) => {
     try { await authAPI.logout(); } catch { /* best-effort */ }
   }, []);
 
+  // ✅ updateUser: merge เฉพาะ fields ที่เปลี่ยน
   const updateUser = useCallback((updatedFields) => {
     if (isMounted.current) setUser(prev => prev ? { ...prev, ...updatedFields } : null);
   }, []);
@@ -96,7 +99,6 @@ export const AuthProvider = ({ children }) => {
     clearAuthError: () => setAuthError(null),
   };
 
-  // ✅ ไม่ return null — ส่ง loading ลงไปให้ children จัดการเอง
   return (
     <AuthContext.Provider value={value}>
       {children}

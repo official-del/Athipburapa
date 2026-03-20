@@ -7,11 +7,11 @@ import { HiOutlineCamera, HiArrowLeft } from "react-icons/hi";
 import '../css/Profile.css';
 
 function Profile() {
-  const { user, login } = useAuth();
+  const { user, updateUser } = useAuth();  // ✅ ใช้ updateUser แทน login
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  
-  const profileInputRef = useRef(null);
+
+  const profileInputRef    = useRef(null);
   const backgroundInputRef = useRef(null);
 
   const avatars = [
@@ -24,44 +24,41 @@ function Profile() {
   ];
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    profileImage: '',
+    fullName:        '',
+    profileImage:    '',
     backgroundImage: '',
-    profileFile: null,
-    backgroundFile: null
+    profileFile:     null,
+    backgroundFile:  null,
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
-        fullName: user.fullName || '',
-        profileImage: user.profileImage || avatars[0].url,
+        fullName:        user.fullName        || '',
+        profileImage:    user.profileImage    || avatars[0].url,
         backgroundImage: user.backgroundImage || '',
-        profileFile: null,
-        backgroundFile: null
+        profileFile:     null,
+        backgroundFile:  null,
       });
     }
   }, [user]);
 
   const handleFileChange = (e, type) => {
     const file = e.target.files[0];
-    if (file) {
-      // ตรวจสอบขนาดไฟล์ (ไม่ควรเกิน 3MB)
-      if (file.size > 3 * 1024 * 1024) {
-        setMessage({ type: 'error', text: 'ไฟล์มีขนาดใหญ่เกินไป (จำกัด 3MB)' });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === 'profile') {
-          setFormData(prev => ({ ...prev, profileImage: reader.result, profileFile: file }));
-        } else {
-          setFormData(prev => ({ ...prev, backgroundImage: reader.result, backgroundFile: file }));
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'ไฟล์มีขนาดใหญ่เกินไป (จำกัด 3MB)' });
+      return;
     }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (type === 'profile') {
+        setFormData(prev => ({ ...prev, profileImage: reader.result, profileFile: file }));
+      } else {
+        setFormData(prev => ({ ...prev, backgroundImage: reader.result, backgroundFile: file }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAvatarSelect = (url) => {
@@ -76,33 +73,31 @@ function Profile() {
     try {
       const data = new FormData();
       data.append('fullName', formData.fullName);
-      
-      // กรณีส่งรูปโปรไฟล์
+
       if (formData.profileFile) {
-        data.append('profileImage', formData.profileFile); // ส่งเป็นไฟล์จริง
+        data.append('profileImage', formData.profileFile);
       } else {
-        data.append('profileImage', formData.profileImage); // ส่งเป็น URL string (Avatar)
+        data.append('profileImage', formData.profileImage);
       }
-      
-      // กรณีส่งรูปพื้นหลัง
+
       if (formData.backgroundFile) {
         data.append('backgroundImage', formData.backgroundFile);
       } else if (formData.backgroundImage) {
         data.append('backgroundImage', formData.backgroundImage);
       }
 
-      console.log("กำลังส่งข้อมูลไปยัง Backend...");
-      
       const response = await authAPI.updateProfile(data);
-      
+
       if (response.data.success || response.status === 200) {
-        const token = localStorage.getItem('token');
-        // อัปเดตข้อมูลใน AuthContext ทันที
-        login(response.data.user, token);
+        // ✅ แก้: ใช้ updateUser() แทน login()
+        // updateUser() จะ merge เฉพาะ fields ที่เปลี่ยน ไม่ overwrite ทั้งหมด
+        updateUser(response.data.user);
         setMessage({ type: 'success', text: 'บันทึกข้อมูลและอัปเดตโปรไฟล์เรียบร้อยแล้ว' });
+        // รีเซ็ต file inputs
+        setFormData(prev => ({ ...prev, profileFile: null, backgroundFile: null }));
       }
     } catch (err) {
-      console.error("Update Error Details:", err.response?.data);
+      console.error('Update Error Details:', err.response?.data);
       const errorMsg = err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง';
       setMessage({ type: 'error', text: errorMsg });
     } finally {
@@ -136,8 +131,8 @@ function Profile() {
 
                 <div className="avatar-selection-grid">
                   {avatars.map((av) => (
-                    <div 
-                      key={av.id} 
+                    <div
+                      key={av.id}
                       className={`avatar-item ${formData.profileImage === av.url ? 'active' : ''}`}
                       onClick={() => handleAvatarSelect(av.url)}
                     >
@@ -146,7 +141,10 @@ function Profile() {
                   ))}
                 </div>
 
-                <input type="file" ref={profileInputRef} hidden accept="image/*" onChange={(e) => handleFileChange(e, 'profile')} />
+                <input
+                  type="file" ref={profileInputRef} hidden accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'profile')}
+                />
                 <div className="upload-box-dashed mt-4" onClick={() => profileInputRef.current.click()}>
                   <div className="upload-content">
                     <HiOutlineCamera className="upload-icon" />
@@ -166,21 +164,24 @@ function Profile() {
                   )}
                 </div>
 
-                <input type="file" ref={backgroundInputRef} hidden accept="image/*" onChange={(e) => handleFileChange(e, 'background')} />
+                <input
+                  type="file" ref={backgroundInputRef} hidden accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'background')}
+                />
                 <div className="upload-box-dashed mt-3" onClick={() => backgroundInputRef.current.click()}>
-                   <div className="upload-content">
-                      <HiOutlineCamera className="upload-icon" />
-                      <p>เปลี่ยนรูปพื้นหลัง</p>
-                   </div>
+                  <div className="upload-content">
+                    <HiOutlineCamera className="upload-icon" />
+                    <p>เปลี่ยนรูปพื้นหลัง</p>
+                  </div>
                 </div>
 
                 <div className="info-form-section mt-4">
                   <div className="form-group-custom">
                     <label>📝 ชื่อ-นามสกุล</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.fullName}
-                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       required
                       placeholder="กรอกชื่อของคุณ"
                     />
@@ -190,9 +191,13 @@ function Profile() {
             </div>
 
             <div className="profile-footer-actions">
-              {message.text && <div className={`status-msg ${message.type}`}>{message.text}</div>}
+              {message.text && (
+                <div className={`status-msg ${message.type}`}>{message.text}</div>
+              )}
               <div className="btn-group">
-                <button type="button" className="btn-cancel" onClick={() => window.location.reload()}>คืนค่าเดิม</button>
+                <button type="button" className="btn-cancel" onClick={() => window.location.reload()}>
+                  คืนค่าเดิม
+                </button>
                 <button type="submit" className="btn-save" disabled={loading}>
                   {loading ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
                 </button>
