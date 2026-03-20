@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut, IoVideocamOutline } from "react-icons/io5";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut, IoVideocamOutline, IoSearchOutline, IoTimeOutline, IoTrendingUpOutline, IoNewspaperOutline } from "react-icons/io5";
 import { CiSearch } from "react-icons/ci";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/Languagecontext';
-import { categoryAPI } from '../services/api';
+import { categoryAPI, newsAPI } from '../services/api';
 import { translateBatch } from '../services/translationService';
 import './Navbar.css';
+
+const RECENT_KEY = 'nb_recent_searches';
+const MAX_RECENT = 5;
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -14,14 +17,26 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu]   = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [displayCats, setDisplayCats] = useState([]);
+  const [showSearch, setShowSearch]       = useState(false);
+  const [searchTerm, setSearchTerm]       = useState('');
+  const [suggestions, setSuggestions]     = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [categories, setCategories]       = useState([]);
+  const [displayCats, setDisplayCats]     = useState([]);
 
-  const searchRef = useRef(null);
+  const searchRef   = useRef(null);
+  const debounceRef = useRef(null);
+
+  // โหลด recent searches จาก localStorage
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      setRecentSearches(stored);
+    } catch { setRecentSearches([]); }
+  }, []);
 
   useEffect(() => {
     categoryAPI.getAll()
@@ -45,6 +60,72 @@ function Navbar() {
     updateNames();
   }, [lang, categories]);
 
+  // auto-focus เมื่อ search overlay เปิด
+  useEffect(() => {
+    if (showSearch) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    } else {
+      setSearchTerm('');
+      setSuggestions([]);
+    }
+  }, [showSearch]);
+
+  // debounce live suggestions
+  const fetchSuggestions = useCallback(async (term) => {
+    if (!term.trim() || term.length < 2) { setSuggestions([]); return; }
+    setSearchLoading(true);
+    try {
+      const res = await newsAPI.getAll({ search: term });
+      // แสดงแค่ 6 รายการแรก เอาเฉพาะ title + category
+      setSuggestions((res.data || []).slice(0, 6));
+    } catch { setSuggestions([]); }
+    finally { setSearchLoading(false); }
+  }, []);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+  };
+
+  const saveRecent = (term) => {
+    if (!term.trim()) return;
+    const prev = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+    const updated = [term, ...prev.filter(s => s !== term)].slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+    setRecentSearches(updated);
+  };
+
+  const handleSearch = (e) => {
+    e?.preventDefault();
+    const term = searchTerm.trim();
+    if (!term) return;
+    saveRecent(term);
+    navigate(`/news?search=${encodeURIComponent(term)}`);
+    setShowSearch(false);
+    setShowMobileMenu(false);
+  };
+
+  const handleSuggestionClick = (item) => {
+    saveRecent(item.title);
+    navigate(`/news/${item._id}`);
+    setShowSearch(false);
+  };
+
+  const handleRecentClick = (term) => {
+    setSearchTerm(term);
+    navigate(`/news?search=${encodeURIComponent(term)}`);
+    setShowSearch(false);
+  };
+
+  const removeRecent = (e, term) => {
+    e.stopPropagation();
+    const updated = recentSearches.filter(s => s !== term);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+    setRecentSearches(updated);
+  };
+
   const handleSwitchLang = (newLang) => {
     switchLang(newLang);
     setShowMobileMenu(false);
@@ -57,16 +138,6 @@ function Navbar() {
     setShowMobileMenu(false);
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/news?search=${encodeURIComponent(searchTerm.trim())}`);
-      setShowSearch(false);
-      setSearchTerm('');
-      setShowMobileMenu(false);
-    }
-  };
-
   const path = location.pathname;
   const isAllActive   = path === '/news';
   const isVideoActive = path === '/videos';
@@ -74,14 +145,14 @@ function Navbar() {
     ? decodeURIComponent(path.split('/news/category/')[1])
     : null;
 
+  const showSuggestions = searchTerm.length >= 2;
+  const showRecent      = !showSuggestions && recentSearches.length > 0;
+
   return (
     <>
       <nav className="nb-root">
-
-        {/* ══════════════ TOP BAR (Red) ══════════════ */}
+        {/* ══════════════ TOP BAR ══════════════ */}
         <div className="nb-top">
-
-          {/* Left: Hamburger + Logo */}
           <div className="nb-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="Menu">
               <IoMenu />
@@ -95,27 +166,13 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* Center: Shortcut buttons (desktop only) */}
           <div className="nb-shortcuts desktop-only">
-            <Link to="/news/category/ข่าวด่วน" className="nb-shortcut-btn">
-              <span className="nb-shortcut-icon green">🏠</span>
-              ข่าวด่วน
-            </Link>
-            <Link to="/news/category/เศรษฐกิจ" className="nb-shortcut-btn">
-              <span className="nb-shortcut-icon gold">💰</span>
-              เศรษฐกิจ
-            </Link>
-            <Link to="/news/category/หวย" className="nb-shortcut-btn">
-              <span className="nb-shortcut-icon blue">🎲</span>
-              ตรวจหวย
-            </Link>
-            <Link to="/news/category/ดวง" className="nb-shortcut-btn">
-              <span className="nb-shortcut-icon teal">⭐</span>
-              ดูดวง
-            </Link>
+            <Link to="/news/category/ข่าวด่วน" className="nb-shortcut-btn"><span className="nb-shortcut-icon green">🏠</span>ข่าวด่วน</Link>
+            <Link to="/news/category/เศรษฐกิจ" className="nb-shortcut-btn"><span className="nb-shortcut-icon gold">💰</span>เศรษฐกิจ</Link>
+            <Link to="/news/category/หวย"      className="nb-shortcut-btn"><span className="nb-shortcut-icon blue">🎲</span>ตรวจหวย</Link>
+            <Link to="/news/category/ดวง"      className="nb-shortcut-btn"><span className="nb-shortcut-icon teal">⭐</span>ดูดวง</Link>
           </div>
 
-          {/* Right: Lang + Search + User */}
           <div className="nb-right">
             <div className="nb-lang-switcher desktop-only">
               <button className={`nb-lang-btn${lang === 'th' ? ' active' : ''}`} onClick={() => switchLang('th')}>TH</button>
@@ -134,7 +191,6 @@ function Navbar() {
                     ? <img src={user.profileImage || user.image} alt="Profile" />
                     : <IoPerson />}
                 </div>
-
                 {showUserMenu && (
                   <div className="nb-dropdown">
                     <div className="nb-dropdown-header">
@@ -146,12 +202,8 @@ function Navbar() {
                     </Link>
                     {user.role === 'admin' && (
                       <>
-                        <Link to="/admin" onClick={() => setShowUserMenu(false)}>
-                          <IoSettingsOutline /> จัดการข่าวสาร
-                        </Link>
-                        <Link to="/admin/videos" onClick={() => setShowUserMenu(false)}>
-                          <IoVideocamOutline /> จัดการวิดีโอ
-                        </Link>
+                        <Link to="/admin" onClick={() => setShowUserMenu(false)}><IoSettingsOutline /> จัดการข่าวสาร</Link>
+                        <Link to="/admin/videos" onClick={() => setShowUserMenu(false)}><IoVideocamOutline /> จัดการวิดีโอ</Link>
                       </>
                     )}
                     <button onClick={handleLogout} className="nb-logout-item">
@@ -168,17 +220,12 @@ function Navbar() {
           </div>
         </div>
 
-        {/* ══════════════ BOTTOM CATEGORY BAR (Dark) ══════════════ */}
+        {/* ══════════════ CATEGORY BAR ══════════════ */}
         <div className="nb-cats-bar">
-          <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
-            🏠
-          </Link>
+          <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>🏠</Link>
           {categories.map((cat, i) => (
-            <Link
-              key={cat._id}
-              to={`/news/category/${encodeURIComponent(cat.name)}`}
-              className={`nb-cat-link${activeCat === cat.name ? ' active' : ''}`}
-            >
+            <Link key={cat._id} to={`/news/category/${encodeURIComponent(cat.name)}`}
+              className={`nb-cat-link${activeCat === cat.name ? ' active' : ''}`}>
               {displayCats[i] || cat.name}
             </Link>
           ))}
@@ -188,22 +235,107 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* ══════════════ SEARCH OVERLAY ══════════════ */}
+      {/* ══════════════ SEARCH OVERLAY (ใหม่) ══════════════ */}
       {showSearch && (
         <>
           <div className="nb-overlay-backdrop" onClick={() => setShowSearch(false)} />
           <div className="nb-search-modal">
-            <div className="nb-search-container">
-              <form onSubmit={handleSearch}>
-                <input
-                  ref={searchRef} autoFocus type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="ค้นหาหัวข้อข่าวที่คุณสนใจ..."
-                />
-                <button type="submit"><CiSearch /></button>
-              </form>
-              <button className="nb-close-search" onClick={() => setShowSearch(false)}><IoClose /></button>
+            <div className="nb-search-box">
+
+              {/* Input row */}
+              <div className="nb-search-input-row">
+                <IoSearchOutline className="nb-search-icon-left" />
+                <form onSubmit={handleSearch} style={{ flex: 1, display: 'flex' }}>
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    className="nb-search-input"
+                    value={searchTerm}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === 'Escape' && setShowSearch(false)}
+                    placeholder={lang === 'en' ? 'Search news, categories...' : 'ค้นหาข่าว, หมวดหมู่...'}
+                  />
+                </form>
+                {searchTerm && (
+                  <button className="nb-search-clear" onClick={() => { setSearchTerm(''); setSuggestions([]); searchRef.current?.focus(); }}>
+                    <IoClose />
+                  </button>
+                )}
+                <button className="nb-search-close-btn" onClick={() => setShowSearch(false)}>
+                  <IoClose />
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="nb-search-divider" />
+
+              {/* Live suggestions */}
+              {showSuggestions && (
+                <div className="nb-search-results">
+                  {searchLoading ? (
+                    <div className="nb-search-loading">
+                      <span className="nb-search-spinner" />
+                      <span>กำลังค้นหา...</span>
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <>
+                      <p className="nb-search-section-label">
+                        <IoNewspaperOutline /> ผลการค้นหา
+                      </p>
+                      {suggestions.map(item => (
+                        <div key={item._id} className="nb-suggestion-item" onClick={() => handleSuggestionClick(item)}>
+                          <div className="nb-suggestion-img">
+                            {item.image
+                              ? <img src={item.image} alt="" />
+                              : <IoNewspaperOutline />}
+                          </div>
+                          <div className="nb-suggestion-text">
+                            <span className="nb-suggestion-title">{item.title}</span>
+                            {item.category?.name && (
+                              <span className="nb-suggestion-cat">{item.category.name}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <button className="nb-search-all-btn" onClick={handleSearch}>
+                        ดูผลลัพธ์ทั้งหมดสำหรับ "{searchTerm}"
+                      </button>
+                    </>
+                  ) : (
+                    <div className="nb-search-empty">
+                      <IoSearchOutline />
+                      <p>ไม่พบข่าวที่เกี่ยวกับ "{searchTerm}"</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Recent searches */}
+              {showRecent && (
+                <div className="nb-search-results">
+                  <p className="nb-search-section-label">
+                    <IoTimeOutline /> ค้นหาล่าสุด
+                  </p>
+                  {recentSearches.map(term => (
+                    <div key={term} className="nb-recent-item" onClick={() => handleRecentClick(term)}>
+                      <IoTimeOutline className="nb-recent-icon" />
+                      <span>{term}</span>
+                      <button className="nb-recent-remove" onClick={(e) => removeRecent(e, term)}>
+                        <IoClose />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty state — ยังไม่ได้พิมพ์ */}
+              {!showSuggestions && !showRecent && (
+                <div className="nb-search-hint">
+                  <IoTrendingUpOutline />
+                  <p>{lang === 'en' ? 'Search by title, content or category' : 'ค้นหาด้วยชื่อข่าว เนื้อหา หรือหมวดหมู่'}</p>
+                </div>
+              )}
+
             </div>
           </div>
         </>
@@ -219,7 +351,6 @@ function Navbar() {
                 {user ? (
                   <div className="nb-user-card">
                     <div className="nb-user-avatar">
-                      {/* ✅ แก้: ใช้ profileImage ก่อน แล้ว fallback เป็น image */}
                       {user.profileImage || user.image
                         ? <img src={user.profileImage || user.image} alt="" />
                         : <IoPerson />}
@@ -240,7 +371,6 @@ function Navbar() {
             </div>
 
             <div className="nb-drawer-body">
-              {/* Language */}
               <div className="nb-drawer-section">
                 <span className="nb-drawer-label">Language / ภาษา</span>
                 <div className="nb-drawer-langs">
@@ -249,7 +379,6 @@ function Navbar() {
                 </div>
               </div>
 
-              {/* Menu */}
               <div className="nb-drawer-section">
                 <span className="nb-drawer-label">Menu / เมนู</span>
                 <Link to="/news" className={`nb-drawer-item ${isAllActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
@@ -260,24 +389,19 @@ function Navbar() {
                 </Link>
               </div>
 
-              {/* Categories */}
               <div className="nb-drawer-section">
                 <span className="nb-drawer-label">Categories / หมวดหมู่</span>
                 <div className="nb-drawer-grid">
                   {categories.map((cat, i) => (
-                    <Link
-                      key={cat._id}
-                      to={`/news/category/${encodeURIComponent(cat.name)}`}
+                    <Link key={cat._id} to={`/news/category/${encodeURIComponent(cat.name)}`}
                       className={`nb-drawer-grid-item ${activeCat === cat.name ? 'active' : ''}`}
-                      onClick={() => setShowMobileMenu(false)}
-                    >
+                      onClick={() => setShowMobileMenu(false)}>
                       {displayCats[i] || cat.name}
                     </Link>
                   ))}
                 </div>
               </div>
 
-              {/* Admin */}
               {user?.role === 'admin' && (
                 <div className="nb-drawer-section admin-tint">
                   <span className="nb-drawer-label">Admin Settings</span>
@@ -290,15 +414,11 @@ function Navbar() {
                 </div>
               )}
 
-              {/* ✅ เพิ่ม: Profile section ใน drawer สำหรับ user ที่ login แล้ว */}
               {user && (
                 <div className="nb-drawer-section">
                   <span className="nb-drawer-label">บัญชีของฉัน</span>
-                  <Link
-                    to="/profile"
-                    className={`nb-drawer-item ${path === '/profile' ? 'active' : ''}`}
-                    onClick={() => setShowMobileMenu(false)}
-                  >
+                  <Link to="/profile" className={`nb-drawer-item ${path === '/profile' ? 'active' : ''}`}
+                    onClick={() => setShowMobileMenu(false)}>
                     <IoPerson /> {t('nav_profile') || 'แก้ไขโปรไฟล์'}
                   </Link>
                 </div>

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const News = require('../models/News');
+const Category = require('../models/Category');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 
@@ -14,11 +15,22 @@ router.get('/', async (req, res) => {
     let filter = {};
 
     if (category) filter.category = category;
+
     if (search) {
+      // ✅ ค้นหา category ที่ชื่อตรงกับ keyword ก่อน
+      const matchedCategories = await Category.find({
+        name: { $regex: search, $options: 'i' }
+      }).select('_id');
+
+      const categoryIds = matchedCategories.map(c => c._id);
+
       filter.$or = [
-        { title:   { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } },
-        { excerpt: { $regex: search, $options: 'i' } }
+        { title:    { $regex: search, $options: 'i' } },
+        { content:  { $regex: search, $options: 'i' } },
+        { excerpt:  { $regex: search, $options: 'i' } },
+        { author:   { $regex: search, $options: 'i' } },
+        // ✅ เพิ่ม: ถ้า keyword ตรงกับชื่อ category ก็แสดงข่าวในหมวดนั้นด้วย
+        ...(categoryIds.length > 0 ? [{ category: { $in: categoryIds } }] : []),
       ];
     }
 
@@ -34,9 +46,7 @@ router.get('/', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// ✅ GET /api/news/category/:categoryId
-// ต้องอยู่เหนือ /:id เสมอ ไม่งั้น Express จะตีความ
-// "category" ว่าเป็น :id แล้วพัง
+// GET /api/news/category/:categoryId
 // ─────────────────────────────────────────────
 router.get('/category/:categoryId', async (req, res) => {
   try {
@@ -81,14 +91,12 @@ router.get('/:id', async (req, res) => {
 // ─────────────────────────────────────────────
 router.post('/', auth, admin, async (req, res) => {
   try {
-    // ✅ เพิ่ม albumImages
     const { title, content, excerpt, image, category, author, albumImages } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(category)) {
       return res.status(400).json({ message: 'หมวดหมู่ไม่ถูกต้อง' });
     }
 
-    // ✅ ส่ง albumImages เข้า constructor ด้วย
     const news = new News({ title, content, excerpt, image, category, author, albumImages });
     await news.save();
 
@@ -114,7 +122,6 @@ router.put('/:id', auth, admin, async (req, res) => {
       return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
     }
 
-    // ✅ เพิ่ม albumImages
     const { title, content, excerpt, image, category, author, albumImages } = req.body;
 
     if (category && !mongoose.Types.ObjectId.isValid(category)) {
@@ -126,13 +133,12 @@ router.put('/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ message: 'ไม่พบข่าว' });
     }
 
-    if (title)                 news.title    = title;
-    if (content)               news.content  = content;
-    if (excerpt !== undefined) news.excerpt  = excerpt;
-    if (image)                 news.image    = image;
-    if (category)              news.category = category;
-    if (author !== undefined)  news.author   = author;
-    // ✅ ต้องเช็ค Array.isArray เพราะ [] เป็น falsy ใน if ธรรมดา
+    if (title)                 news.title       = title;
+    if (content)               news.content     = content;
+    if (excerpt !== undefined) news.excerpt     = excerpt;
+    if (image)                 news.image       = image;
+    if (category)              news.category    = category;
+    if (author !== undefined)  news.author      = author;
     if (Array.isArray(albumImages)) news.albumImages = albumImages;
 
     await news.save();
