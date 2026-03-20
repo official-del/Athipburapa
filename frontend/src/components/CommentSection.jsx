@@ -4,17 +4,25 @@ import { commentAPI } from '../services/api';
 import { Link } from 'react-router-dom';
 import './CommentSection.css';
 
-// ✅ แก้ไข: รับ newsId เป็น props ปกติ
+const getInitials = (fullName, username) => {
+  if (fullName && fullName.trim()) {
+    const parts = fullName.trim().split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return fullName[0].toUpperCase();
+  }
+  if (username) return username[0].toUpperCase();
+  return '?';
+};
+
 function CommentSection({ newsId }) {
   const { user } = useAuth();
-  const [comments, setComments] = useState([]);
+  const [comments, setComments]     = useState([]);
   const [newComment, setNewComment] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
 
   useEffect(() => {
-    // ป้องกันการเรียก API ถ้า newsId ยังไม่มีค่า หรือค่าผิดรูปแบบ
-    if (newsId && newsId.length > 10) {
+    if (newsId && /^[a-fA-F0-9]{24}$/.test(newsId)) {
       fetchComments();
     }
   }, [newsId]);
@@ -30,26 +38,21 @@ function CommentSection({ newsId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!newComment.trim()) {
       setError('กรุณาใส่ข้อความคอมเมนต์');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
       const response = await commentAPI.create({
-        newsId: newsId, // ✅ มั่นใจว่าส่ง ID ที่มาจาก MongoDB (_id)
+        newsId:  newsId,
         content: newComment
       });
-      
-      // อัปเดตลิสต์คอมเมนต์ทันที
       if (response.data.comment) {
-         setComments([response.data.comment, ...comments]);
+        setComments([response.data.comment, ...comments]);
       } else {
-         fetchComments(); // fallback ถ้า backend ส่งข้อมูลมาไม่ครบ
+        fetchComments();
       }
       setNewComment('');
     } catch (err) {
@@ -77,13 +80,15 @@ function CommentSection({ newsId }) {
     });
   };
 
+  if (!newsId || !/^[a-fA-F0-9]{24}$/.test(newsId)) return null;
+
   return (
     <div className="comment-section">
       <h3 className="comment-title">ความคิดเห็น ({comments.length})</h3>
 
       {user ? (
         <form onSubmit={handleSubmit} className="comment-form">
-          {error && <div className="comment-error" style={{color: 'red'}}>{error}</div>}
+          {error && <div className="comment-error">{error}</div>}
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
@@ -103,20 +108,25 @@ function CommentSection({ newsId }) {
 
       <div className="comments-list">
         {comments.length === 0 ? (
-          <p className="no-comments">ยังไม่มีความคิดเห็น</p>
+          <p className="no-comments">ยังไม่มีความคิดเห็น เป็นคนแรกที่แสดงความคิดเห็น!</p>
         ) : (
           comments.map((comment) => (
             <div key={comment._id} className="comment-item">
               <div className="comment-header">
                 <div className="comment-author">
+                  <div className="comment-author-avatar">
+                    {getInitials(comment.userId?.fullName, comment.userId?.username)}
+                  </div>
                   <strong>{comment.userId?.fullName || 'ผู้ใช้'}</strong>
-                  <span className="comment-username"> @{comment.userId?.username || 'unknown'}</span>
+                  <span className="comment-username">@{comment.userId?.username || 'unknown'}</span>
                 </div>
                 <span className="comment-date">{formatDate(comment.createdAt)}</span>
               </div>
               <p className="comment-content">{comment.content}</p>
               {user && (user.id === comment.userId?._id || user._id === comment.userId?._id) && (
-                <button onClick={() => handleDelete(comment._id)} className="comment-delete-btn">ลบ</button>
+                <button onClick={() => handleDelete(comment._id)} className="comment-delete-btn">
+                  ลบ
+                </button>
               )}
             </div>
           ))

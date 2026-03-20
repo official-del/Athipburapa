@@ -4,7 +4,8 @@ import DOMPurify from 'dompurify';
 import api from '../services/api.js';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import PhotoAlbum from '../components/PhotoAlbum';   // ← NEW
+import PhotoAlbum from '../components/PhotoAlbum';
+import CommentSection from '../components/CommentSection'; // ✅ เพิ่ม import
 import { HiOutlineCalendar, HiOutlineEye } from "react-icons/hi";
 import { IoArrowBack, IoChevronForward,
          IoPlayCircle, IoPauseCircle, IoStopCircle,
@@ -171,7 +172,6 @@ function NewsDetail() {
       })
     : (news.date || (lang === 'en' ? 'Unknown date' : 'ไม่ระบุวันที่'));
 
-  // ── Album images: news.albumImages[] หรือ fallback เป็น []
   const albumImages = Array.isArray(news.albumImages) ? news.albumImages : [];
 
   return (
@@ -278,7 +278,7 @@ function NewsDetail() {
             {/* Article body */}
             <article className="nd-body" dangerouslySetInnerHTML={{ __html: safeContent }} />
 
-            {/* ── PHOTO ALBUM ── (แสดงหลังเนื้อหา ถ้ามีรูป) */}
+            {/* ── PHOTO ALBUM ── */}
             {albumImages.length > 0 && (
               <PhotoAlbum images={albumImages} title={d.title} />
             )}
@@ -296,6 +296,17 @@ function NewsDetail() {
 
           </div>
         </div>
+
+        {/* ── COMMENT SECTION ── */}
+        {/* ✅ ใช้ news._id (MongoDB ObjectId) ไม่ใช่ id จาก useParams */}
+        {news._id && (
+          <div className="nd-card-wrap">
+            <div className="nd-card">
+              <CommentSection newsId={news._id} />
+            </div>
+          </div>
+        )}
+
       </main>
 
       <Footer />
