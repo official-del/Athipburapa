@@ -6,8 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PhotoAlbum from '../components/PhotoAlbum';
 import CommentSection from '../components/CommentSection';
-import ShareButtons from '../components/ShareButtons';
-import ShareButtons from '../components/ShareButtons';     // ✅ เพิ่ม import
+import ShareButtons from '../components/ShareButtons';    // ✅ เพิ่ม import
 import { HiOutlineCalendar, HiOutlineEye } from "react-icons/hi";
 import { IoArrowBack, IoChevronForward,
          IoPlayCircle, IoPauseCircle, IoStopCircle,
