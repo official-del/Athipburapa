@@ -142,7 +142,7 @@ function Navbar() {
                       <span className="role">{user.role}</span>
                     </div>
                     <Link to="/profile" onClick={() => setShowUserMenu(false)}>
-                      <IoPerson /> {t('nav_profile') || 'โปรไฟล์'}
+                      <IoPerson /> {t('nav_profile') || 'แก้ไขโปรไฟล์'}
                     </Link>
                     {user.role === 'admin' && (
                       <>
@@ -170,7 +170,6 @@ function Navbar() {
 
         {/* ══════════════ BOTTOM CATEGORY BAR (Dark) ══════════════ */}
         <div className="nb-cats-bar">
-          {/* Home icon */}
           <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
             🏠
           </Link>
@@ -220,7 +219,10 @@ function Navbar() {
                 {user ? (
                   <div className="nb-user-card">
                     <div className="nb-user-avatar">
-                      {user.image ? <img src={user.image} alt="" /> : <IoPerson />}
+                      {/* ✅ แก้: ใช้ profileImage ก่อน แล้ว fallback เป็น image */}
+                      {user.profileImage || user.image
+                        ? <img src={user.profileImage || user.image} alt="" />
+                        : <IoPerson />}
                     </div>
                     <div className="nb-user-text">
                       <span className="nb-uname">{user.username}</span>
@@ -284,6 +286,20 @@ function Navbar() {
                   </Link>
                   <Link to="/admin/videos" className="nb-drawer-item" onClick={() => setShowMobileMenu(false)}>
                     <IoVideocamOutline /> จัดการวิดีโอ
+                  </Link>
+                </div>
+              )}
+
+              {/* ✅ เพิ่ม: Profile section ใน drawer สำหรับ user ที่ login แล้ว */}
+              {user && (
+                <div className="nb-drawer-section">
+                  <span className="nb-drawer-label">บัญชีของฉัน</span>
+                  <Link
+                    to="/profile"
+                    className={`nb-drawer-item ${path === '/profile' ? 'active' : ''}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <IoPerson /> {t('nav_profile') || 'แก้ไขโปรไฟล์'}
                   </Link>
                 </div>
               )}

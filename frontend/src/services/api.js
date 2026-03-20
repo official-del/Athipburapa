@@ -1,32 +1,31 @@
 import axios from 'axios';
 
-// --- แก้ไขจุดนี้: ทำให้มั่นใจว่ามี /api แน่นอน ---
 const getBaseURL = () => {
   const envURL = import.meta.env.VITE_API_URL;
   if (envURL) {
-    // ถ้ามี VITE_API_URL และยังไม่มี /api ต่อท้าย ให้เติมให้
     return envURL.endsWith('/api') ? envURL : `${envURL}/api`;
   }
-  // ถ้าไม่มี Env ให้ใช้ URL Render และต้องมี /api ปิดท้าย
-  return 'https://athipburapa.onrender.com/api'; 
+  return 'https://athipburapa.onrender.com/api';
 };
 
-const API_URL = getBaseURL();
-
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// --- ส่วนที่เหลือคงเดิม ---
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // ✅ ถ้าเป็น FormData ให้ลบ Content-Type ออก
+    // เพื่อให้ browser ตั้ง multipart/form-data พร้อม boundary เองอัตโนมัติ
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -45,23 +44,24 @@ api.interceptors.response.use(
   }
 );
 
-// --- API Modules (Auth, News, etc.) ---
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  login:    (data) => api.post('/auth/login', data),
-  logout:   () => {
+  register:      (data) => api.post('/auth/register', data),
+  login:         (data) => api.post('/auth/login', data),
+  logout:        () => {
     localStorage.removeItem('token');
     return api.post('/auth/logout');
   },
-  getMe: () => api.get('/auth/me'),
+  getMe:         () => api.get('/auth/me'),
+  // ✅ เพิ่ม updateProfile — ส่ง FormData ได้ทั้งไฟล์และ URL
+  updateProfile: (data) => api.put('/auth/profile', data),
 };
 
 export const newsAPI = {
-  getAll:  (params)      => api.get('/news', { params }),
-  getById: (id)          => api.get(`/news/${id}`),
-  create:  (data)        => api.post('/news', data),
-  update:  (id, data)    => api.put(`/news/${id}`, data),
-  delete:  (id)          => api.delete(`/news/${id}`),
+  getAll:  (params)   => api.get('/news', { params }),
+  getById: (id)       => api.get(`/news/${id}`),
+  create:  (data)     => api.post('/news', data),
+  update:  (id, data) => api.put(`/news/${id}`, data),
+  delete:  (id)       => api.delete(`/news/${id}`),
 };
 
 export const categoryAPI = {
@@ -70,8 +70,8 @@ export const categoryAPI = {
 
 export const commentAPI = {
   getByNewsId: (newsId) => api.get(`/comments/news/${newsId}`),
-  create:       (data)   => api.post('/comments', data),
-  delete:       (id)     => api.delete(`/comments/${id}`),
+  create:      (data)   => api.post('/comments', data),
+  delete:      (id)     => api.delete(`/comments/${id}`),
 };
 
 export const videoAPI = {
