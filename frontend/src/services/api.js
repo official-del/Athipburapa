@@ -1,9 +1,17 @@
 import axios from 'axios';
 
-// ตรวจสอบตัวแปรจาก Vercel ถ้าไม่มีให้ใช้ localhost
-const API_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : 'https://athipburapa.onrender.com';
+// --- แก้ไขจุดนี้: ทำให้มั่นใจว่ามี /api แน่นอน ---
+const getBaseURL = () => {
+  const envURL = import.meta.env.VITE_API_URL;
+  if (envURL) {
+    // ถ้ามี VITE_API_URL และยังไม่มี /api ต่อท้าย ให้เติมให้
+    return envURL.endsWith('/api') ? envURL : `${envURL}/api`;
+  }
+  // ถ้าไม่มี Env ให้ใช้ URL Render และต้องมี /api ปิดท้าย
+  return 'https://athipburapa.onrender.com/api'; 
+};
+
+const API_URL = getBaseURL();
 
 const api = axios.create({
   baseURL: API_URL,
@@ -13,7 +21,7 @@ const api = axios.create({
   },
 });
 
-// --- Request Interceptor: แนบ Token ทุก Request ---
+// --- ส่วนที่เหลือคงเดิม ---
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -25,30 +33,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// --- Response Interceptor: จัดการ Error กลาง ---
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
-
     if (status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
-
-    if (status === 403) {
-      console.warn('คุณไม่มีสิทธิ์เข้าถึงส่วนนี้');
-    }
-
-    if (status >= 500) {
-      console.error('เกิดข้อผิดพลาดที่ Server กรุณาลองใหม่อีกครั้ง');
-    }
-
     return Promise.reject(error);
   }
 );
 
-// --- Auth ---
+// --- API Modules (Auth, News, etc.) ---
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login:    (data) => api.post('/auth/login', data),
@@ -59,7 +56,6 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
 };
 
-// --- News ---
 export const newsAPI = {
   getAll:  (params)      => api.get('/news', { params }),
   getById: (id)          => api.get(`/news/${id}`),
@@ -68,23 +64,19 @@ export const newsAPI = {
   delete:  (id)          => api.delete(`/news/${id}`),
 };
 
-// --- Category ---
 export const categoryAPI = {
   getAll: () => api.get('/categories'),
 };
 
-// --- Comment ---
 export const commentAPI = {
   getByNewsId: (newsId) => api.get(`/comments/news/${newsId}`),
-  create:      (data)   => api.post('/comments', data),
-  delete:      (id)     => api.delete(`/comments/${id}`),
+  create:       (data)   => api.post('/comments', data),
+  delete:       (id)     => api.delete(`/comments/${id}`),
 };
 
-// --- Video ---
 export const videoAPI = {
   getAll:  (params)   => api.get('/videos', { params }),
   getById: (id)       => api.get(`/videos/${id}`),
-  // create ใช้ FormData (multipart) — เรียกตรงผ่าน api instance ใน component
   update:  (id, data) => api.put(`/videos/${id}`, data),
   delete:  (id)       => api.delete(`/videos/${id}`),
 };
