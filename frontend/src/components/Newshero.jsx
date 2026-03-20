@@ -7,7 +7,7 @@ import { translateNewsArray, translateBatch } from '../services/translationServi
 import './NewsHero.css';
 
 const NewsHero = ({ currentCategory = '' }) => {
-  const { lang, t } = useLanguage();
+  const { lang } = useLanguage();
 
   const [slides, setSlides]           = useState([]);
   const [sideNews, setSideNews]       = useState([]);
@@ -20,17 +20,19 @@ const NewsHero = ({ currentCategory = '' }) => {
   const [translating, setTranslating] = useState(false);
   const timerRef = useRef(null);
 
-  /* ── Fetch ── */
+  /* ── Fetch (ดึงข่าว 10 ข่าว เพื่อให้ Sidebar สูงเท่า Slider) ── */
   useEffect(() => {
     const fetchAll = async () => {
       try {
         const [newsRes, catRes] = await Promise.all([
-          newsAPI.getAll({ params: { sort: '-createdAt', limit: 20 } }),
+          newsAPI.getAll({ params: { sort: '-createdAt', limit: 10 } }),
           categoryAPI.getAll(),
         ]);
         const all = Array.isArray(newsRes.data) ? newsRes.data : [];
+        
+        // แบ่งข่าว: 5 ข่าวแรกไป Slider, 5 ข่าวหลังไป Sidebar
         setSlides(all.slice(0, 5));
-        setSideNews(all.length > 5 ? all.slice(5) : all);
+        setSideNews(all.slice(5, 10));
         setCategories(catRes.data || []);
       } catch (err) {
         console.error('NewsHero fetch error:', err);
@@ -41,7 +43,7 @@ const NewsHero = ({ currentCategory = '' }) => {
     fetchAll();
   }, []);
 
-  /* ── แปลภาษาเมื่อ data โหลดหรือ lang เปลี่ยน ── */
+  /* ── Translation Logic ── */
   useEffect(() => {
     if (!slides.length && !categories.length) return;
 
@@ -103,16 +105,12 @@ const NewsHero = ({ currentCategory = '' }) => {
       return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
         + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
     }
-    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
-                    'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543} `
-      + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} น.`;
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} น.`;
   };
 
-  const getCatName = (cat) =>
-    cat && typeof cat === 'object' ? cat.name || '' : cat || '';
+  const getCatName = (cat) => cat && typeof cat === 'object' ? cat.name || '' : cat || '';
 
-  /* ── Loading skeleton ── */
   if (loading) return (
     <div className="nh-root">
       <div className="nh-skeleton-title" />
@@ -120,74 +118,53 @@ const NewsHero = ({ currentCategory = '' }) => {
       <div className="nh-body">
         <div className="nh-skeleton-slider" />
         <div className="nh-skeleton-side">
-          {[...Array(6)].map((_, i) => <div key={i} className="nh-skeleton-side-item" />)}
+          {[...Array(5)].map((_, i) => <div key={i} className="nh-skeleton-side-item" />)}
         </div>
       </div>
     </div>
   );
 
-  const slide    = dispSlides[current];
+  const slide = dispSlides[current];
   const rawSlide = slides[current];
 
   return (
     <div className="nh-root">
-
-      {/* ── Translating bar ── */}
       {translating && (
         <div className="nh-translating-bar">
-          <span className="nh-translating-dot" />
-          <span className="nh-translating-dot" />
-          <span className="nh-translating-dot" />
+          <span className="nh-translating-dot" /><span className="nh-translating-dot" /><span className="nh-translating-dot" />
           {lang === 'en' ? 'Translating...' : 'กำลังแปล...'}
         </div>
       )}
 
-      {/* ── Page Title ── */}
       <div className="nh-title-wrap">
         <div className="nh-title-line" />
         <h1 className="nh-title">{lang === 'en' ? 'News' : 'ข่าว'}</h1>
         <div className="nh-title-line" />
       </div>
 
-      {/* ── Breadcrumb ── */}
       <div className="nh-breadcrumb">
-        <Link to="/" className="nh-bc-home">
-          <IoHomeOutline /> {lang === 'en' ? 'Home' : 'หน้าแรก'}
-        </Link>
+        <Link to="/" className="nh-bc-home"><IoHomeOutline /> {lang === 'en' ? 'Home' : 'หน้าแรก'}</Link>
         <span className="nh-bc-sep">›</span>
         <span className="nh-bc-current">{lang === 'en' ? 'News' : 'ข่าว'}</span>
       </div>
 
-      {/* ── Category Pills ── */}
       <div className="nh-cats">
-        <Link to="/news" className={`nh-cat-pill ${!currentCategory ? 'active' : ''}`}>
-          {lang === 'en' ? 'All' : 'ทั้งหมด'}
-        </Link>
+        <Link to="/news" className={`nh-cat-pill ${!currentCategory ? 'active' : ''}`}>{lang === 'en' ? 'All' : 'ทั้งหมด'}</Link>
         {categories.map((cat, i) => (
-          <Link
-            key={cat._id}
-            to={`/news/category/${encodeURIComponent(cat.name)}`}
-            className={`nh-cat-pill ${currentCategory === cat.name ? 'active' : ''}`}
-          >
+          <Link key={cat._id} to={`/news/category/${encodeURIComponent(cat.name)}`} className={`nh-cat-pill ${currentCategory === cat.name ? 'active' : ''}`}>
             {dispCats[i] || cat.name}
           </Link>
         ))}
       </div>
 
-      {/* ── Body ── */}
       {dispSlides.length > 0 && (
         <div className={`nh-body ${translating ? 'nh-fading' : ''}`}>
-
+          
           {/* SLIDER */}
           <div className="nh-slider">
             <Link to={`/news/${rawSlide?._id}`} className="nh-slide">
               <div className="nh-slide-img-wrap">
-                <img
-                  src={rawSlide?.image || rawSlide?.thumbnail}
-                  alt={slide?.title}
-                  className="nh-slide-img"
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.png'; }}
-                />
+                <img src={rawSlide?.image || rawSlide?.thumbnail} alt={slide?.title} className="nh-slide-img" />
                 <div className="nh-slide-overlay" />
               </div>
               <div className="nh-slide-body">
@@ -196,37 +173,25 @@ const NewsHero = ({ currentCategory = '' }) => {
                 <span className="nh-slide-date">{formatDateTime(rawSlide?.createdAt)}</span>
               </div>
             </Link>
-
-            <button className="nh-arrow left"  onClick={() => goTo(current - 1)} aria-label="prev"><IoChevronBack /></button>
-            <button className="nh-arrow right" onClick={() => goTo(current + 1)} aria-label="next"><IoChevronForward /></button>
-
+            <button className="nh-arrow left" onClick={() => goTo(current - 1)}><IoChevronBack /></button>
+            <button className="nh-arrow right" onClick={() => goTo(current + 1)}><IoChevronForward /></button>
             <div className="nh-dots">
               {dispSlides.map((_, i) => (
                 <button key={i} className={`nh-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} />
               ))}
             </div>
-
-            {/* slide counter */}
-            <div className="nh-slide-counter">
-              {current + 1} / {dispSlides.length}
-            </div>
           </div>
 
-          {/* SIDE NEWS */}
+          {/* SIDE NEWS (ความสูงจะเท่ากับ Slider พอดี) */}
           <div className="nh-side">
             <div className="nh-side-header">
               <span className="nh-side-header-dot" />
               {lang === 'en' ? 'Latest News' : 'ข่าวล่าสุด'}
             </div>
             {dispSide.map((item, i) => (
-              <Link to={`/news/${slides[i + 5]?._id || slides[i]?._id}`} key={item._id || i} className="nh-side-item">
+              <Link to={`/news/${sideNews[i]?._id}`} key={item._id || i} className="nh-side-item">
                 <div className="nh-side-img-wrap">
-                  <img
-                    src={slides[i + 5]?.image || slides[i + 5]?.thumbnail || slides[i]?.image}
-                    alt={item.title}
-                    className="nh-side-img"
-                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.png'; }}
-                  />
+                  <img src={sideNews[i]?.image || sideNews[i]?.thumbnail} alt={item.title} className="nh-side-img" />
                 </div>
                 <div className="nh-side-content">
                   <p className="nh-side-title">{item.title}</p>
