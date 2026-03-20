@@ -102,7 +102,7 @@ function Navbar() {
     const term = searchTerm.trim();
     if (!term) return;
     saveRecent(term);
-    navigate(`/news?search=${encodeURIComponent(term)}`);
+    navigate(`/search?q=${encodeURIComponent(term)}`);
     setShowSearch(false);
     setShowMobileMenu(false);
   };
@@ -115,7 +115,7 @@ function Navbar() {
 
   const handleRecentClick = (term) => {
     setSearchTerm(term);
-    navigate(`/news?search=${encodeURIComponent(term)}`);
+    navigate(`/search?q=${encodeURIComponent(term)}`);
     setShowSearch(false);
   };
 
