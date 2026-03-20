@@ -428,3 +428,7 @@
   .nb-login-btn span { display: none; }
   .nb-login-btn { padding: 9px; border-radius: 50%; width: 38px; height: 38px; justify-content: center; }
 }
+.nb-drawer a,
+.nb-drawer button {
+  text-decoration: none !important;
+}
