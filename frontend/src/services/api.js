@@ -3,7 +3,7 @@ import axios from 'axios';
 // ตรวจสอบตัวแปรจาก Vercel ถ้าไม่มีให้ใช้ localhost
 const API_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
-  : 'http://localhost:5000/api';
+  : 'https://athipburapa.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
