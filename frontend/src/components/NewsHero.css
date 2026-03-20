@@ -185,14 +185,35 @@
 
 .nh-slider:hover .nh-slide-img { transform: scale(1.03); }
 
+/* --- แก้ไขส่วนนี้ใน CSS ของคุณ --- */
 .nh-slide-overlay {
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
+  /* ปรับให้ไล่สีเฉพาะช่วงล่างสุด และใช้ความโปร่งแสงที่นุ่มนวลขึ้น */
   background: linear-gradient(
     to top,
-    rgba(0,0,0,0.75) 0%,
-    rgba(0,0,0,0.35) 30%,
-    transparent     60%   /* ← เพิ่มจุดนี้ */
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 30%,
+    transparent 50%
   );
+}
+
+.nh-slide-body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 24px; /* เพิ่มพื้นที่หายใจ */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nh-slide-title {
+  /* เพิ่ม Text Shadow เพื่อให้อ่านออกแม้พื้นหลังจะจางลง */
+  text-shadow: 1px 1px 10px rgba(0, 0, 0, 0.8);
+  -webkit-line-clamp: 2; /* ลดเหลือ 2 บรรทัดจะดูสะอาดกว่า */
+  font-size: clamp(16px, 2.5vw, 22px);
 }
 
 .nh-slide-body {
