@@ -23,7 +23,6 @@ function Navbar() {
   const [displayCats, setDisplayCats] = useState([]); 
   
   const searchRef = useRef(null);
-  const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
 
   useEffect(() => {
     categoryAPI.getAll()
@@ -127,7 +126,7 @@ function Navbar() {
                       </>
                     )}
 
-                    <button onClick={handleLogout}>
+                    <button onClick={handleLogout} className="nb-logout-item">
                       <IoLogOut /> {t('nav_logout')}
                     </button>
                   </div>
@@ -139,7 +138,7 @@ function Navbar() {
           </div>
         </div>
 
-        {/* ── Category Bar ── */}
+        {/* ── Category Bar (Desktop) ── */}
         <div className="nb-cats">
           <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
             {t('nav_allNews')}
@@ -153,8 +152,6 @@ function Navbar() {
               {displayCats[i] || cat.name}
             </Link>
           ))}
-
-          {/* ── Video Link ── */}
           <Link
             to="/videos"
             className={`nb-cat-link nb-cat-video${isVideoActive ? ' active' : ''}`}
@@ -170,73 +167,91 @@ function Navbar() {
         <>
           <div className="nb-drawer-backdrop" onClick={() => setShowSearch(false)} />
           <div className="nb-search-overlay">
-            <form onSubmit={handleSearch}>
-              <input
-                ref={searchRef}
-                autoFocus
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t('nav_searchPlaceholder') || 'ค้นหาข่าว...'}
-              />
-              <button type="submit"><CiSearch /></button>
-            </form>
-            <button className="nb-icon-btn nb-search-close" onClick={() => setShowSearch(false)}>
-              <IoClose />
-            </button>
+            <div className="nb-search-box">
+              <form onSubmit={handleSearch}>
+                <input
+                  ref={searchRef}
+                  autoFocus
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={t('nav_searchPlaceholder') || 'ค้นหาข่าว...'}
+                />
+                <button type="submit"><CiSearch /></button>
+              </form>
+              <button className="nb-search-close-btn" onClick={() => setShowSearch(false)}><IoClose /></button>
+            </div>
           </div>
         </>
       )}
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer (ส่วนที่ Redesign ใหม่) */}
       {showMobileMenu && (
         <>
           <div className="nb-drawer-backdrop" onClick={() => setShowMobileMenu(false)} />
           <div className="nb-drawer">
-            <button className="nb-drawer-close nb-icon-btn" onClick={() => setShowMobileMenu(false)}>
-              <IoClose />
-            </button>
+            <div className="nb-drawer-header">
+              <Link to="/" className="nb-logo" onClick={() => setShowMobileMenu(false)}>Athip<span>burapa</span></Link>
+              <button className="nb-icon-btn" onClick={() => setShowMobileMenu(false)}><IoClose /></button>
+            </div>
 
-            <div className="nb-drawer-lang">
-              <div className="nb-lang-switcher">
-                <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>TH</button>
-                <button onClick={() => handleSwitchLang('en')} className={lang === 'en' ? 'active' : ''}>EN</button>
+            <div className="nb-drawer-content">
+              {/* Language Switcher */}
+              <div className="nb-drawer-section">
+                <span className="nb-drawer-label">Language</span>
+                <div className="nb-lang-switcher full-width">
+                  <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>TH</button>
+                  <button onClick={() => handleSwitchLang('en')} className={lang === 'en' ? 'active' : ''}>EN</button>
+                </div>
               </div>
+
+              {/* Main Links */}
+              <div className="nb-drawer-section">
+                <span className="nb-drawer-label">Menu</span>
+                <Link to="/news" className={`nb-drawer-item ${isAllActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+                  {t('nav_allNews')}
+                </Link>
+                <Link to="/videos" className={`nb-drawer-item video-item ${isVideoActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+                  <IoVideocamOutline /> {lang === 'en' ? 'Videos' : 'วิดีโอทั้งหมด'}
+                </Link>
+              </div>
+
+              {/* Categories Grid */}
+              <div className="nb-drawer-section">
+                <span className="nb-drawer-label">Categories</span>
+                <div className="nb-drawer-grid">
+                  {categories.map((cat, i) => (
+                    <Link
+                      key={cat._id}
+                      to={`/news/category/${encodeURIComponent(cat.name)}`}
+                      className={`nb-drawer-grid-item ${activeCat === cat.name ? 'active' : ''}`}
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      {displayCats[i] || cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Admin Panel (ธีมเดียวกับ Sidebar - ไม่มีเส้นใต้) */}
+              {user?.role === 'admin' && (
+                <div className="nb-drawer-section admin-group">
+                  <span className="nb-drawer-label">Admin Panel</span>
+                  <Link to="/admin" className="nb-drawer-item admin-link" onClick={() => setShowMobileMenu(false)}>
+                    <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
+                  </Link>
+                  <Link to="/admin/videos" className="nb-drawer-item admin-link" onClick={() => setShowMobileMenu(false)}>
+                    <IoVideocamOutline /> จัดการวิดีโอ
+                  </Link>
+                </div>
+              )}
             </div>
 
-            <div className="nb-drawer-links">
-              <Link to="/news" className="nb-drawer-cat" onClick={() => setShowMobileMenu(false)}>
-                {t('nav_allNews')}
-              </Link>
-              {categories.map((cat, i) => (
-                <Link
-                  key={cat._id}
-                  to={`/news/category/${encodeURIComponent(cat.name)}`}
-                  className="nb-drawer-cat"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {displayCats[i] || cat.name}
-                </Link>
-              ))}
-
-              {/* Video ใน Drawer */}
-              <Link
-                to="/videos"
-                className="nb-drawer-cat nb-drawer-video"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                <IoVideocamOutline /> {lang === 'en' ? 'Videos' : 'วิดีโอ'}
-              </Link>
-            </div>
-
-            {user?.role === 'admin' && (
-              <div className="nb-drawer-admin">
-                <Link to="/admin" className="nb-drawer-admin-link" onClick={() => setShowMobileMenu(false)}>
-                  <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
-                </Link>
-                <Link to="/admin/videos" className="nb-drawer-admin-link" onClick={() => setShowMobileMenu(false)}>
-                  <IoVideocamOutline /> จัดการวิดีโอ
-                </Link>
+            {user && (
+              <div className="nb-drawer-footer">
+                <button className="nb-drawer-logout-btn" onClick={handleLogout}>
+                  <IoLogOut /> {t('nav_logout')}
+                </button>
               </div>
             )}
           </div>
