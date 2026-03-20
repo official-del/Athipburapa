@@ -1,0 +1,173 @@
+/* ── Share Buttons ──────────────────────────────────── */
+.share-buttons {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1.5px solid #d4edda;
+}
+
+.sb-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a7c5c;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.875rem;
+}
+
+/* ── Button row ─────────────────────────────────────── */
+.sb-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.875rem;
+}
+
+/* ── Base button ────────────────────────────────────── */
+.sb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Sarabun', sans-serif;
+  border: 1.5px solid;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.sb-btn:active {
+  transform: scale(0.97);
+}
+
+.sb-btn svg {
+  flex-shrink: 0;
+}
+
+/* ── Facebook ──────────────────────────────────────── */
+.sb-btn--facebook {
+  background-color: #eef3fc;
+  border-color: #4267B2;
+  color: #1a3a7a;
+}
+.sb-btn--facebook:hover {
+  background-color: #4267B2;
+  color: #ffffff;
+}
+
+/* ── X (Twitter) ───────────────────────────────────── */
+.sb-btn--x {
+  background-color: #f5f5f5;
+  border-color: #2c2c2c;
+  color: #111111;
+}
+.sb-btn--x:hover {
+  background-color: #14171A;
+  color: #ffffff;
+  border-color: #14171A;
+}
+
+/* ── LINE ──────────────────────────────────────────── */
+.sb-btn--line {
+  background-color: #f0fbf4;
+  border-color: #06C755;
+  color: #047a35;
+}
+.sb-btn--line:hover {
+  background-color: #06C755;
+  color: #ffffff;
+}
+
+/* ── Threads ───────────────────────────────────────── */
+.sb-btn--threads {
+  background-color: #f5f5f5;
+  border-color: #555555;
+  color: #222222;
+}
+.sb-btn--threads:hover {
+  background-color: #1c1c1c;
+  color: #ffffff;
+  border-color: #1c1c1c;
+}
+
+/* ── Instagram ─────────────────────────────────────── */
+.sb-btn--instagram {
+  background-color: #fdf0f8;
+  border-color: #C13584;
+  color: #7d1a52;
+}
+.sb-btn--instagram:hover {
+  background-color: #C13584;
+  color: #ffffff;
+}
+
+/* ── Copy link ─────────────────────────────────────── */
+.sb-btn--copy {
+  background-color: #f4fbf6;
+  border-color: #2e7d46;
+  color: #1a5c2e;
+}
+.sb-btn--copy:hover {
+  background-color: #2e7d46;
+  color: #ffffff;
+}
+
+/* ── Copied state ──────────────────────────────────── */
+.sb-btn--copied,
+.sb-btn--copied:hover {
+  background-color: #2e7d46;
+  border-color: #2e7d46;
+  color: #ffffff;
+}
+
+/* ── URL input ─────────────────────────────────────── */
+.sb-url-row {
+  margin-top: 4px;
+}
+
+.sb-url-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  color: #4a7c5c;
+  background-color: #f4fbf6;
+  border: 1.5px solid #c3e6cb;
+  border-radius: 8px;
+  cursor: text;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.sb-url-input:focus {
+  outline: none;
+  border-color: #2e7d46;
+  box-shadow: 0 0 0 3px rgba(46, 125, 70, 0.1);
+}
+
+/* ── Instagram notice ──────────────────────────────── */
+.sb-ig-notice {
+  margin-top: 0.625rem;
+  font-size: 12px;
+  color: #7d1a52;
+  background-color: #fdf0f8;
+  border: 1px solid #f0c0dc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 600px) {
+  .sb-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .sb-row {
+    gap: 6px;
+  }
+}
