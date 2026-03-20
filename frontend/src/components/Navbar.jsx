@@ -18,25 +18,28 @@ function Navbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
   const [categories, setCategories] = useState([]);
   const [displayCats, setDisplayCats] = useState([]); 
   
   const searchRef = useRef(null);
 
+  // ดึงหมวดหมู่จาก API
   useEffect(() => {
     categoryAPI.getAll()
       .then(res => setCategories(res.data))
       .catch(err => console.error('Error fetching categories:', err));
   }, []);
 
+  // จัดการแปลภาษาหมวดหมู่
   useEffect(() => {
     const updateNames = async () => {
       if (categories.length === 0) return;
       const rawNames = categories.map(c => c.name);
       if (lang === 'en') {
-        const translated = await translateBatch(rawNames, { from: 'th', to: 'en' });
-        setDisplayCats(translated);
+        try {
+          const translated = await translateBatch(rawNames, { from: 'th', to: 'en' });
+          setDisplayCats(translated);
+        } catch { setDisplayCats(rawNames); }
       } else {
         setDisplayCats(rawNames);
       }
@@ -76,9 +79,10 @@ function Navbar() {
   return (
     <>
       <nav className="nb-root">
+        {/* --- Top Section --- */}
         <div className="nb-top">
           <div className="nb-left">
-            <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)}>
+            <button className="nb-icon-btn" onClick={() => setShowMobileMenu(true)} aria-label="Menu">
               <IoMenu />
             </button>
           </div>
@@ -88,15 +92,9 @@ function Navbar() {
           </div>
 
           <div className="nb-right">
-            <div className="nb-lang-switcher">
-              <button 
-                className={`nb-lang-btn${lang === 'th' ? ' active' : ''}`} 
-                onClick={() => handleSwitchLang('th')}
-              >TH</button>
-              <button 
-                className={`nb-lang-btn${lang === 'en' ? ' active' : ''}`} 
-                onClick={() => handleSwitchLang('en')}
-              >EN</button>
+            <div className="nb-lang-switcher desktop-only">
+              <button className={`nb-lang-btn${lang === 'th' ? ' active' : ''}`} onClick={() => switchLang('th')}>TH</button>
+              <button className={`nb-lang-btn${lang === 'en' ? ' active' : ''}`} onClick={() => switchLang('en')}>EN</button>
             </div>
             
             <button className="nb-icon-btn" onClick={() => setShowSearch(true)}><CiSearch /></button>
@@ -111,37 +109,41 @@ function Navbar() {
 
                 {showUserMenu && (
                   <div className="nb-dropdown">
+                    <div className="nb-dropdown-header">
+                        <span className="name">{user.username}</span>
+                        <span className="role">{user.role}</span>
+                    </div>
                     <Link to="/profile" onClick={() => setShowUserMenu(false)}>
-                      <IoPerson /> {t('nav_profile')}
+                      <IoPerson /> {t('nav_profile') || 'โปรไฟล์'}
                     </Link>
-
                     {user.role === 'admin' && (
                       <>
                         <Link to="/admin" onClick={() => setShowUserMenu(false)}>
-                          <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
+                          <IoSettingsOutline /> จัดการข่าวสาร
                         </Link>
                         <Link to="/admin/videos" onClick={() => setShowUserMenu(false)}>
                           <IoVideocamOutline /> จัดการวิดีโอ
                         </Link>
                       </>
                     )}
-
                     <button onClick={handleLogout} className="nb-logout-item">
-                      <IoLogOut /> {t('nav_logout')}
+                      <IoLogOut /> {t('nav_logout') || 'ออกจากระบบ'}
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link to="/login" className="nb-login-btn"><IoPerson /> <span>{t('nav_login')}</span></Link>
+              <Link to="/login" className="nb-login-btn">
+                <IoPerson /> <span>{t('nav_login') || 'เข้าสู่ระบบ'}</span>
+              </Link>
             )}
           </div>
         </div>
 
-        {/* ── Category Bar (Desktop) ── */}
-        <div className="nb-cats">
+        {/* --- Desktop Category Bar --- */}
+        <div className="nb-cats-bar">
           <Link to="/news" className={`nb-cat-link${isAllActive ? ' active' : ''}`}>
-            {t('nav_allNews')}
+            {t('nav_allNews') || 'ข่าวทั้งหมด'}
           </Link>
           {categories.map((cat, i) => (
             <Link
@@ -152,73 +154,76 @@ function Navbar() {
               {displayCats[i] || cat.name}
             </Link>
           ))}
-          <Link
-            to="/videos"
-            className={`nb-cat-link nb-cat-video${isVideoActive ? ' active' : ''}`}
-          >
-            <IoVideocamOutline className="nb-video-icon" />
-            {lang === 'en' ? 'Videos' : 'วิดีโอ'}
+          <Link to="/videos" className={`nb-cat-link nb-cat-video${isVideoActive ? ' active' : ''}`}>
+            <IoVideocamOutline /> {lang === 'en' ? 'Videos' : 'วิดีโอ'}
           </Link>
         </div>
       </nav>
 
-      {/* Search Overlay */}
+      {/* --- Search Overlay --- */}
       {showSearch && (
         <>
-          <div className="nb-drawer-backdrop" onClick={() => setShowSearch(false)} />
-          <div className="nb-search-overlay">
-            <div className="nb-search-box">
+          <div className="nb-overlay-backdrop" onClick={() => setShowSearch(false)} />
+          <div className="nb-search-modal">
+            <div className="nb-search-container">
               <form onSubmit={handleSearch}>
-                <input
-                  ref={searchRef}
-                  autoFocus
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={t('nav_searchPlaceholder') || 'ค้นหาข่าว...'}
-                />
+                <input ref={searchRef} autoFocus type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="ค้นหาหัวข้อข่าวที่คุณสนใจ..." />
                 <button type="submit"><CiSearch /></button>
               </form>
-              <button className="nb-search-close-btn" onClick={() => setShowSearch(false)}><IoClose /></button>
+              <button className="nb-close-search" onClick={() => setShowSearch(false)}><IoClose /></button>
             </div>
           </div>
         </>
       )}
 
-      {/* Mobile Drawer (ส่วนที่ Redesign ใหม่) */}
+      {/* --- Mobile Responsive Drawer --- */}
       {showMobileMenu && (
         <>
-          <div className="nb-drawer-backdrop" onClick={() => setShowMobileMenu(false)} />
+          <div className="nb-overlay-backdrop" onClick={() => setShowMobileMenu(false)} />
           <div className="nb-drawer">
             <div className="nb-drawer-header">
-              <Link to="/" className="nb-logo" onClick={() => setShowMobileMenu(false)}>Athip<span>burapa</span></Link>
-              <button className="nb-icon-btn" onClick={() => setShowMobileMenu(false)}><IoClose /></button>
+              <div className="nb-drawer-user-info">
+                {user ? (
+                  <div className="nb-user-card">
+                    <div className="nb-user-avatar">
+                      {user.image ? <img src={user.image} alt=""/> : <IoPerson />}
+                    </div>
+                    <div className="nb-user-text">
+                      <span className="nb-uname">{user.username}</span>
+                      <span className="nb-urole">{user.role}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Link to="/" className="nb-logo" onClick={() => setShowMobileMenu(false)}>Athip<span>burapa</span></Link>
+                )}
+              </div>
+              <button className="nb-close-drawer" onClick={() => setShowMobileMenu(false)}><IoClose /></button>
             </div>
 
-            <div className="nb-drawer-content">
-              {/* Language Switcher */}
+            <div className="nb-drawer-body">
+              {/* Language Switcher for Mobile */}
               <div className="nb-drawer-section">
-                <span className="nb-drawer-label">Language</span>
-                <div className="nb-lang-switcher full-width">
-                  <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>TH</button>
-                  <button onClick={() => handleSwitchLang('en')} className={lang === 'en' ? 'active' : ''}>EN</button>
+                <span className="nb-drawer-label">Language / ภาษา</span>
+                <div className="nb-drawer-langs">
+                   <button onClick={() => handleSwitchLang('th')} className={lang === 'th' ? 'active' : ''}>ไทย (TH)</button>
+                   <button onClick={() => handleSwitchLang('en')} className={lang === 'en' ? 'active' : ''}>English (EN)</button>
                 </div>
               </div>
 
-              {/* Main Links */}
+              {/* Navigation Group */}
               <div className="nb-drawer-section">
-                <span className="nb-drawer-label">Menu</span>
+                <span className="nb-drawer-label">Menu / เมนู</span>
                 <Link to="/news" className={`nb-drawer-item ${isAllActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
-                  {t('nav_allNews')}
+                  {t('nav_allNews') || 'ข่าวทั้งหมด'}
                 </Link>
-                <Link to="/videos" className={`nb-drawer-item video-item ${isVideoActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
-                  <IoVideocamOutline /> {lang === 'en' ? 'Videos' : 'วิดีโอทั้งหมด'}
+                <Link to="/videos" className={`nb-drawer-item video-highlight ${isVideoActive ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+                  <IoVideocamOutline /> {lang === 'en' ? 'All Videos' : 'วิดีโอทั้งหมด'}
                 </Link>
               </div>
 
-              {/* Categories Grid */}
+              {/* Categories Grid (ธีม Sidebar คลีนๆ) */}
               <div className="nb-drawer-section">
-                <span className="nb-drawer-label">Categories</span>
+                <span className="nb-drawer-label">Categories / หมวดหมู่</span>
                 <div className="nb-drawer-grid">
                   {categories.map((cat, i) => (
                     <Link
@@ -233,14 +238,14 @@ function Navbar() {
                 </div>
               </div>
 
-              {/* Admin Panel (ธีมเดียวกับ Sidebar - ไม่มีเส้นใต้) */}
+              {/* Admin Panel Group */}
               {user?.role === 'admin' && (
-                <div className="nb-drawer-section admin-group">
-                  <span className="nb-drawer-label">Admin Panel</span>
-                  <Link to="/admin" className="nb-drawer-item admin-link" onClick={() => setShowMobileMenu(false)}>
-                    <IoSettingsOutline /> {t('nav_admin') || 'จัดการข่าวสาร'}
+                <div className="nb-drawer-section admin-tint">
+                  <span className="nb-drawer-label">Admin Settings</span>
+                  <Link to="/admin" className="nb-drawer-item" onClick={() => setShowMobileMenu(false)}>
+                    <IoSettingsOutline /> จัดการข่าวสาร
                   </Link>
-                  <Link to="/admin/videos" className="nb-drawer-item admin-link" onClick={() => setShowMobileMenu(false)}>
+                  <Link to="/admin/videos" className="nb-drawer-item" onClick={() => setShowMobileMenu(false)}>
                     <IoVideocamOutline /> จัดการวิดีโอ
                   </Link>
                 </div>
@@ -249,8 +254,8 @@ function Navbar() {
 
             {user && (
               <div className="nb-drawer-footer">
-                <button className="nb-drawer-logout-btn" onClick={handleLogout}>
-                  <IoLogOut /> {t('nav_logout')}
+                <button className="nb-drawer-logout" onClick={handleLogout}>
+                  <IoLogOut /> {t('nav_logout') || 'ออกจากระบบ'}
                 </button>
               </div>
             )}
