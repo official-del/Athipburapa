@@ -44,7 +44,8 @@ app.use('/api/categories', require('./routes/category'));
 app.use('/api/news',       require('./routes/news'));
 app.use('/api/comments',   require('./routes/comment'));
 app.use('/api/videos',     require('./routes/videos'));
-app.use('/api/upload',     require('./routes/upload'));   // ← NEW
+app.use('/api/upload',     require('./routes/upload'));
+app.use('/api/dashboard',  require('./routes/dashboard')); // ✅ ใหม่
 
 // ── Health check ──────────────────────────────
 app.get('/api/health', (req, res) => {

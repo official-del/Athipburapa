@@ -10,6 +10,7 @@ import Register from './pages/Register'
 import Profile from './pages/Profile'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminVideoManagement from './pages/AdminVideoManagement'
+import AdminOverview from './pages/AdminOverview'
 import VideoPage from './pages/VideoPage'
 import About from './pages/About'
 
@@ -21,7 +22,6 @@ function App() {
         <Route path='/news'          element={<News />} />
         <Route path='/news/:id'      element={<NewsDetail />} />
         <Route path='/news/category/:categoryName' element={<CategoryNews />} />
-        {/* ✅ หน้าผลการค้นหาแยกต่างหาก */}
         <Route path='/search'        element={<SearchResults />} />
         <Route path='/videos'        element={<VideoPage />} />
         <Route path='/login'         element={<Login />} />
@@ -29,6 +29,7 @@ function App() {
         <Route path='/profile'       element={<Profile />} />
         <Route path='/admin'         element={<AdminDashboard />} />
         <Route path='/admin/videos'  element={<AdminVideoManagement />} />
+        <Route path='/admin/overview' element={<AdminOverview />} />  {/* ✅ ใหม่ */}
         <Route path='/about'         element={<About />} />
         <Route path='/contact'       element={<About />} />
         <Route path='/privacy'       element={<About />} />

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut, IoVideocamOutline, IoSearchOutline, IoTimeOutline, IoTrendingUpOutline, IoNewspaperOutline } from "react-icons/io5";
+import { IoPerson, IoSettingsOutline, IoMenu, IoClose, IoLogOut, IoVideocamOutline,
+         IoSearchOutline, IoTimeOutline, IoTrendingUpOutline, IoNewspaperOutline,
+         IoGridOutline } from "react-icons/io5";
 import { CiSearch } from "react-icons/ci";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -17,20 +19,19 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [showUserMenu, setShowUserMenu]   = useState(false);
+  const [showUserMenu, setShowUserMenu]     = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showSearch, setShowSearch]       = useState(false);
-  const [searchTerm, setSearchTerm]       = useState('');
-  const [suggestions, setSuggestions]     = useState([]);
+  const [showSearch, setShowSearch]         = useState(false);
+  const [searchTerm, setSearchTerm]         = useState('');
+  const [suggestions, setSuggestions]       = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [categories, setCategories]       = useState([]);
-  const [displayCats, setDisplayCats]     = useState([]);
+  const [searchLoading, setSearchLoading]   = useState(false);
+  const [categories, setCategories]         = useState([]);
+  const [displayCats, setDisplayCats]       = useState([]);
 
   const searchRef   = useRef(null);
   const debounceRef = useRef(null);
 
-  // โหลด recent searches จาก localStorage
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
@@ -60,7 +61,6 @@ function Navbar() {
     updateNames();
   }, [lang, categories]);
 
-  // auto-focus เมื่อ search overlay เปิด
   useEffect(() => {
     if (showSearch) {
       setTimeout(() => searchRef.current?.focus(), 50);
@@ -70,7 +70,6 @@ function Navbar() {
     }
   }, [showSearch]);
 
-  // debounce live suggestions
   const fetchSuggestions = useCallback(async (term) => {
     if (!term.trim() || term.length < 2) { setSuggestions([]); return; }
     setSearchLoading(true);
@@ -194,8 +193,16 @@ function Navbar() {
                     </Link>
                     {user.role === 'admin' && (
                       <>
-                        <Link to="/admin" onClick={() => setShowUserMenu(false)}><IoSettingsOutline /> จัดการข่าวสาร</Link>
-                        <Link to="/admin/videos" onClick={() => setShowUserMenu(false)}><IoVideocamOutline /> จัดการวิดีโอ</Link>
+                        {/* ✅ ภาพรวมระบบ */}
+                        <Link to="/admin/overview" onClick={() => setShowUserMenu(false)}>
+                          <IoGridOutline /> ภาพรวมระบบ
+                        </Link>
+                        <Link to="/admin" onClick={() => setShowUserMenu(false)}>
+                          <IoSettingsOutline /> จัดการข่าวสาร
+                        </Link>
+                        <Link to="/admin/videos" onClick={() => setShowUserMenu(false)}>
+                          <IoVideocamOutline /> จัดการวิดีโอ
+                        </Link>
                       </>
                     )}
                     <button onClick={handleLogout} className="nb-logout-item">
@@ -233,8 +240,6 @@ function Navbar() {
           <div className="nb-overlay-backdrop" onClick={() => setShowSearch(false)} />
           <div className="nb-search-modal">
             <div className="nb-search-box">
-
-              {/* Input row */}
               <div className="nb-search-input-row">
                 <IoSearchOutline className="nb-search-icon-left" />
                 <form onSubmit={handleSearch} style={{ flex: 1, display: 'flex' }}>
@@ -258,10 +263,8 @@ function Navbar() {
                 </button>
               </div>
 
-              {/* Divider */}
               <div className="nb-search-divider" />
 
-              {/* Live suggestions */}
               {showSuggestions && (
                 <div className="nb-search-results">
                   {searchLoading ? (
@@ -302,7 +305,6 @@ function Navbar() {
                 </div>
               )}
 
-              {/* Recent searches */}
               {showRecent && (
                 <div className="nb-search-results">
                   <p className="nb-search-section-label">
@@ -320,14 +322,12 @@ function Navbar() {
                 </div>
               )}
 
-              {/* Empty state — ยังไม่ได้พิมพ์ */}
               {!showSuggestions && !showRecent && (
                 <div className="nb-search-hint">
                   <IoTrendingUpOutline />
                   <p>{lang === 'en' ? 'Search by title, content or category' : 'ค้นหาด้วยชื่อข่าว เนื้อหา หรือหมวดหมู่'}</p>
                 </div>
               )}
-
             </div>
           </div>
         </>
@@ -397,6 +397,10 @@ function Navbar() {
               {user?.role === 'admin' && (
                 <div className="nb-drawer-section admin-tint">
                   <span className="nb-drawer-label">Admin Settings</span>
+                  {/* ✅ ภาพรวมระบบ */}
+                  <Link to="/admin/overview" className="nb-drawer-item" onClick={() => setShowMobileMenu(false)}>
+                    <IoGridOutline /> ภาพรวมระบบ
+                  </Link>
                   <Link to="/admin" className="nb-drawer-item" onClick={() => setShowMobileMenu(false)}>
                     <IoSettingsOutline /> จัดการข่าวสาร
                   </Link>
