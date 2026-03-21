@@ -10,7 +10,7 @@ import {
   IoChatbubbleOutline, IoShareSocialOutline,
   IoSendOutline, IoTrashOutline, IoPerson,
   IoCheckmarkCircle, IoCopyOutline, IoLogoFacebook,
-  IoLogoTwitter, IoLogoLine,
+  IoLogoTwitter,
 } from 'react-icons/io5';
 import '../css/VideoPage.css';
 
@@ -31,10 +31,19 @@ function fmtViews(n) {
 
 function timeAgo(date) {
   const diff = (Date.now() - new Date(date)) / 1000;
-  if (diff < 60)   return 'เมื่อกี้';
-  if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+  if (diff < 60)    return 'เมื่อกี้';
+  if (diff < 3600)  return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ชั่วโมงที่แล้ว`;
   return `${Math.floor(diff / 86400)} วันที่แล้ว`;
+}
+
+/* ── LINE Icon SVG (ไม่มีใน react-icons/io5) ── */
+function LineIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.070 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+    </svg>
+  );
 }
 
 /* ── Share Panel ── */
@@ -45,19 +54,16 @@ function SharePanel({ video, onClose }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const el = document.createElement('input');
       el.value = url;
       document.body.appendChild(el);
       el.select();
       document.execCommand('copy');
       document.body.removeChild(el);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const shareLinks = [
@@ -75,7 +81,7 @@ function SharePanel({ video, onClose }) {
     },
     {
       label: 'LINE',
-      icon: <IoLogoLine />,
+      icon: <LineIcon />,
       color: '#06c755',
       href: `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`,
     },
@@ -109,11 +115,11 @@ function SharePanel({ video, onClose }) {
 /* ── Comment Section ── */
 function CommentSection({ video }) {
   const { user } = useAuth();
-  const [comments, setComments]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [content, setContent]     = useState('');
+  const [comments, setComments]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [content, setContent]       = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]         = useState('');
+  const [error, setError]           = useState('');
 
   const fetchComments = useCallback(async () => {
     try {
@@ -121,7 +127,7 @@ function CommentSection({ video }) {
       const res = await api.get(`/comments/video/${video._id}`);
       setComments(res.data || []);
     } catch {
-      // ไม่แสดง error ถ้าโหลด comment ไม่ได้
+      // silent
     } finally {
       setLoading(false);
     }
@@ -160,7 +166,6 @@ function CommentSection({ video }) {
         <IoChatbubbleOutline /> ความคิดเห็น ({comments.length})
       </h3>
 
-      {/* ── Input ── */}
       {user ? (
         <form className="vp-comment-form" onSubmit={handleSubmit}>
           <div className="vp-comment-avatar">
@@ -207,7 +212,6 @@ function CommentSection({ video }) {
         </p>
       )}
 
-      {/* ── List ── */}
       {loading ? (
         <div className="vp-comment-loading">กำลังโหลด...</div>
       ) : comments.length === 0 ? (
@@ -250,11 +254,10 @@ function CommentSection({ video }) {
 /* ── Lightbox player ── */
 function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
   const overlayRef = useRef(null);
-  const [tab, setTab] = useState('info'); // 'info' | 'comments'
+  const [tab, setTab]           = useState('info');
   const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
-    // reset tab เมื่อเปลี่ยนวิดีโอ
     setTab('info');
     setShowShare(false);
   }, [video._id]);
@@ -283,14 +286,12 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
           <button className="vp-nav vp-nav-next" onClick={onNext}><IoChevronForward /></button>
         )}
 
-        {/* ── Video ── */}
         <div className="vp-video-wrap">
           <video key={video._id} controls autoPlay className="vp-video" poster={video.thumbnailUrl}>
             <source src={video.videoUrl} type="video/mp4" />
           </video>
         </div>
 
-        {/* ── Info + Tabs ── */}
         <div className="vp-info">
           <h2 className="vp-title">{video.title}</h2>
           <div className="vp-meta">
@@ -317,12 +318,10 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
             </button>
           </div>
 
-          {/* ── Share Panel ── */}
           {showShare && (
             <SharePanel video={video} onClose={() => setShowShare(false)} />
           )}
 
-          {/* ── Tab Content ── */}
           {tab === 'info' ? (
             <>
               {video.description && <p className="vp-desc">{video.description}</p>}
@@ -422,7 +421,6 @@ function VideoPage() {
     setPage(1);
   };
 
-  // ✅ call API เพื่อเพิ่ม views
   const openPlayer = async (video) => {
     const idx = videos.findIndex(v => v._id === video._id);
     setActiveVideo(video);
@@ -452,7 +450,6 @@ function VideoPage() {
     <div className="vpage-root">
       <Navbar />
 
-      {/* ── Hero Banner ── */}
       <div className="vpage-hero">
         <div className="vpage-hero-bg" />
         <div className="vpage-hero-content">
@@ -483,7 +480,6 @@ function VideoPage() {
       </div>
 
       <main className="vpage-main">
-        {/* ── Filter Bar ── */}
         <div className="vpage-filter-bar">
           <div className="vpage-cats">
             {CATEGORIES.map(cat => (
@@ -508,7 +504,6 @@ function VideoPage() {
           </div>
         </div>
 
-        {/* ── Content ── */}
         {loading ? (
           <div className="vpage-loading">
             <div className="vpage-spinner" />
@@ -532,7 +527,6 @@ function VideoPage() {
           </div>
         )}
 
-        {/* ── Pagination ── */}
         {totalPages > 1 && !loading && (
           <div className="vpage-pagination">
             <button className="vpage-pg-btn" disabled={page <= 1}
@@ -565,7 +559,6 @@ function VideoPage() {
 
       <Footer />
 
-      {/* ── Lightbox Player ── */}
       {activeVideo && (
         <VideoPlayer
           video={activeVideo}
