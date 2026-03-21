@@ -1,104 +1,153 @@
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Noto+Serif+Thai:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Serif+Thai:wght@700;800&display=swap');
 
+/* ═══════════════════════════════════════
+   Tokens
+═══════════════════════════════════════ */
 :root {
-  --cf-green:      #16a34a;
-  --cf-green-dk:   #15803d;
-  --cf-green-lt:   #dcfce7;
-  --cf-green-pale: #f0fdf4;
-  --cf-white:      #ffffff;
-  --cf-gray-bg:    #f9fafb;
-  --cf-gray-line:  #e5e7eb;
-  --cf-text:       #1a1a1a;
-  --cf-text-dim:   #6b7280;
-  --cf-text-sm:    #9ca3af;
-  --cf-radius:     10px;
-  --cf-shadow:     0 2px 12px rgba(0,0,0,0.07);
+  --cf-green:       #16a34a;
+  --cf-green-dk:    #15803d;
+  --cf-green-900:   #14532d;
+  --cf-green-lt:    #dcfce7;
+  --cf-green-pale:  #f0fdf4;
+  --cf-green-glow:  rgba(22,163,74,0.18);
+  --cf-white:       #ffffff;
+  --cf-gray-bg:     #f8fafc;
+  --cf-gray-line:   #e9eef3;
+  --cf-text:        #0f172a;
+  --cf-text-dim:    #64748b;
+  --cf-text-sm:     #94a3b8;
+  --cf-radius:      14px;
+  --cf-radius-pill: 999px;
+  --cf-shadow:      0 2px 12px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04);
+  --cf-shadow-hover:0 16px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.06);
+  --cf-shadow-green:0 8px 24px rgba(22,163,74,0.22);
 }
 
-/* ================================================
+/* ═══════════════════════════════════════
    ROOT
-   ================================================ */
+═══════════════════════════════════════ */
 .cf-root {
   font-family: 'Sarabun', sans-serif;
-  padding: 24px 0;
+  padding: 28px 0 40px;
 }
 
-/* ================================================
+/* ═══════════════════════════════════════
    PAGE TITLE
-   ================================================ */
+═══════════════════════════════════════ */
 .cf-page-title {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.cf-title-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cf-green);
+  display: flex;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 20px;
+}
+
+.cf-title-eyebrow::before,
+.cf-title-eyebrow::after {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1.5px;
+  background: var(--cf-green);
+  border-radius: 2px;
+  opacity: 0.5;
 }
 
 .cf-page-title-text {
   font-family: 'Noto Serif Thai', serif;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--cf-text);
   margin: 0;
-  letter-spacing: 0.3px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .cf-page-title-line {
-  width: 48px;
+  width: 40px;
   height: 3px;
-  background: var(--cf-green);
+  background: linear-gradient(90deg, var(--cf-green), #4ade80);
   border-radius: 2px;
 }
 
-/* ================================================
+/* ═══════════════════════════════════════
    FILTER PILLS
-   ================================================ */
+═══════════════════════════════════════ */
 .cf-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  justify-content: center;
 }
 
 .cf-pill {
   font-family: 'Sarabun', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  padding: 6px 18px;
-  border-radius: 999px;
+  padding: 7px 20px;
+  border-radius: var(--cf-radius-pill);
   border: 1.5px solid var(--cf-gray-line);
   background: var(--cf-white);
   color: var(--cf-text-dim);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.18s, color 0.18s, border-color 0.18s,
-              transform 0.15s, box-shadow 0.18s;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+.cf-pill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cf-green-pale);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
 .cf-pill:hover {
   border-color: var(--cf-green);
   color: var(--cf-green);
-  background: var(--cf-green-pale);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px var(--cf-green-glow);
 }
+.cf-pill:hover::before { opacity: 1; }
+
+.cf-pill span { position: relative; z-index: 1; }
+
 .cf-pill.active {
   background: var(--cf-green);
   color: var(--cf-white);
   border-color: var(--cf-green);
-  box-shadow: 0 4px 12px rgba(22,163,74,0.28);
+  box-shadow: var(--cf-shadow-green);
+  transform: translateY(-1px);
 }
+.cf-pill.active::before { opacity: 0; }
 
-/* ================================================
-   GRID — 3 columns
-   ================================================ */
+/* ═══════════════════════════════════════
+   GRID
+═══════════════════════════════════════ */
 .cf-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 22px;
 }
 
-/* ================================================
+/* ═══════════════════════════════════════
    CARD
-   ================================================ */
+═══════════════════════════════════════ */
 .cf-card {
   display: flex;
   flex-direction: column;
@@ -108,19 +157,40 @@
   background: var(--cf-white);
   box-shadow: var(--cf-shadow);
   border: 1px solid var(--cf-gray-line);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-  animation: cf-fadeUp 0.4s ease both;
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.28s ease,
+              border-color 0.2s ease;
+  animation: cf-fadeUp 0.45s ease both;
+  position: relative;
 }
+
+/* Green accent line on top */
+.cf-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, var(--cf-green), #4ade80, var(--cf-green));
+  background-size: 200% auto;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 1;
+}
+
 .cf-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  transform: translateY(-6px);
+  box-shadow: var(--cf-shadow-hover);
+  border-color: var(--cf-green-lt);
 }
+
+.cf-card:hover::before { opacity: 1; }
+
 @keyframes cf-fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Image wrap */
+/* ── Image wrap ── */
 .cf-card-img-wrap {
   position: relative;
   width: 100%;
@@ -128,99 +198,193 @@
   overflow: hidden;
   background: var(--cf-gray-bg);
 }
+
 .cf-card-img {
   width: 100%; height: 100%;
-  object-fit: cover; display: block;
-  transition: transform 0.4s ease;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-.cf-card:hover .cf-card-img { transform: scale(1.05); }
+.cf-card:hover .cf-card-img { transform: scale(1.07); }
 
-/* gradient overlay + category badge */
+/* Multi-layer gradient overlay */
 .cf-card-img-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0,0,0,0.55) 0%,
-    rgba(0,0,0,0.15) 40%,
-    transparent      70%
-  );
+  background:
+    linear-gradient(to top, rgba(5,30,20,0.72) 0%, rgba(5,30,20,0.2) 45%, transparent 70%),
+    linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 30%);
   display: flex;
   align-items: flex-end;
-  padding: 10px 12px;
-  transition: opacity 0.2s;
+  padding: 12px 14px;
 }
 
+/* Category badge */
 .cf-card-cat {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--cf-green);
   color: #fff;
-  font-size: 11px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  letter-spacing: 0.3px;
+  padding: 3px 11px;
+  border-radius: var(--cf-radius-pill);
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: transform 0.2s ease;
 }
+.cf-card:hover .cf-card-cat { transform: translateY(-1px); }
 
-/* Body */
+/* ── Body ── */
 .cf-card-body {
-  padding: 14px 16px 16px;
+  padding: 16px 18px 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
 }
 
 .cf-card-title {
-  font-size: 14px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--cf-text);
-  line-height: 1.65;
+  line-height: 1.7;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: color 0.15s;
+  transition: color 0.18s ease;
 }
 .cf-card:hover .cf-card-title { color: var(--cf-green); }
 
+/* ── Footer ── */
 .cf-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid var(--cf-gray-line);
+  padding-top: 11px;
+  border-top: 1px dashed var(--cf-gray-line);
+  gap: 6px;
 }
 
-.cf-card-date  { font-size: 12px; color: var(--cf-text-sm); }
-.cf-card-views { font-size: 12px; color: var(--cf-text-sm); }
+.cf-card-date {
+  font-size: 11.5px;
+  color: var(--cf-text-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-/* ================================================
+.cf-card-date::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--cf-green);
+  opacity: 0.6;
+}
+
+.cf-card-views {
+  font-size: 11.5px;
+  color: var(--cf-text-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cf-green-pale);
+  padding: 2px 9px;
+  border-radius: var(--cf-radius-pill);
+  border: 1px solid var(--cf-green-lt);
+  font-weight: 600;
+  color: var(--cf-green-dk);
+}
+
+/* ═══════════════════════════════════════
    EMPTY STATE
-   ================================================ */
+═══════════════════════════════════════ */
 .cf-empty {
   text-align: center;
-  padding: 60px 20px;
+  padding: 72px 20px;
   color: var(--cf-text-dim);
-  font-size: 15px;
 }
 
-/* ================================================
+.cf-empty-icon {
+  font-size: 42px;
+  margin-bottom: 14px;
+  opacity: 0.35;
+  display: block;
+}
+
+.cf-empty-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--cf-text-dim);
+}
+
+/* ═══════════════════════════════════════
+   SKELETON LOADER (optional)
+═══════════════════════════════════════ */
+.cf-skeleton {
+  border-radius: var(--cf-radius);
+  overflow: hidden;
+  background: var(--cf-white);
+  border: 1px solid var(--cf-gray-line);
+  box-shadow: var(--cf-shadow);
+}
+
+.cf-skeleton-img {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% auto;
+  animation: cf-shimmer 1.4s linear infinite;
+}
+
+.cf-skeleton-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cf-skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% auto;
+  animation: cf-shimmer 1.4s linear infinite;
+}
+
+.cf-skeleton-line--sm { width: 60%; }
+
+@keyframes cf-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ═══════════════════════════════════════
    RESPONSIVE
-   ================================================ */
+═══════════════════════════════════════ */
 @media (max-width: 1024px) {
-  .cf-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .cf-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
 }
 
 @media (max-width: 768px) {
   .cf-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .cf-page-title-text { font-size: 19px; }
+  .cf-page-title-text { font-size: 22px; }
+  .cf-pills { justify-content: flex-start; }
 }
 
 @media (max-width: 480px) {
-  .cf-grid { grid-template-columns: repeat(1, 1fr); gap: 14px; }
-  .cf-pill  { font-size: 12px; padding: 5px 12px; }
-  .cf-card-title { font-size: 13px; }
+  .cf-root { padding: 20px 0 32px; }
+  .cf-grid { grid-template-columns: 1fr; gap: 14px; }
+  .cf-pill { font-size: 12px; padding: 6px 14px; }
+  .cf-card-title { font-size: 13.5px; }
+  .cf-page-title-text { font-size: 20px; }
 }

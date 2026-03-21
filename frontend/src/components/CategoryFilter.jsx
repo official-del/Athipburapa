@@ -15,25 +15,36 @@ function CategoryFilter({ categories, selectedCategory, onSelectCategory, news =
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`;
   };
 
-  // ดึงชื่อหมวดหมู่และส่งเข้าฟังก์ชัน t() เพื่อแปลภาษา
   const getCatName = (cat) => {
     const name = cat && typeof cat === 'object' ? cat.name || '' : cat || '';
-    return t(name); // แปลภาษา Real-time จาก Key ที่ได้จาก DB
+    return t(name);
+  };
+
+  const fmtViews = (n) => {
+    if (!n) return '0';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
   };
 
   return (
     <div className="cf-root">
+
+      {/* ── Page Title ── */}
       <div className="cf-page-title">
+        <p className="cf-title-eyebrow">
+          <span>{lang === 'en' ? 'Latest News' : 'ข่าวสาร'}</span>
+        </p>
         <h1 className="cf-page-title-text">{t('cf_title')}</h1>
         <div className="cf-page-title-line" />
       </div>
 
+      {/* ── Filter Pills ── */}
       <div className="cf-pills">
         <button
           className={`cf-pill ${selectedCategory === '' ? 'active' : ''}`}
           onClick={() => onSelectCategory('')}
         >
-          {t('cf_all')}
+          <span>{t('cf_all')}</span>
         </button>
         {categories.map((category) => (
           <button
@@ -41,12 +52,12 @@ function CategoryFilter({ categories, selectedCategory, onSelectCategory, news =
             className={`cf-pill ${selectedCategory === category ? 'active' : ''}`}
             onClick={() => onSelectCategory(category)}
           >
-            {/* แปลชื่อหมวดหมู่บนปุ่ม Filter */}
-            {t(category)}
+            <span>{t(category)}</span>
           </button>
         ))}
       </div>
 
+      {/* ── News Grid ── */}
       {news.length > 0 ? (
         <div className="cf-grid">
           {news.map((item, index) => (
@@ -54,30 +65,36 @@ function CategoryFilter({ categories, selectedCategory, onSelectCategory, news =
               to={`/news/${item._id}`}
               key={item._id}
               className="cf-card"
-              style={{ animationDelay: `${(index % 6) * 0.06}s` }}
+              style={{ animationDelay: `${(index % 6) * 0.07}s` }}
             >
+              {/* Image */}
               <div className="cf-card-img-wrap">
                 <img
                   src={item.image || item.thumbnail}
                   alt={item.title}
                   className="cf-card-img"
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.png'; }}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/images/placeholder.png';
+                  }}
                 />
                 <div className="cf-card-img-overlay">
                   {item.category && (
                     <span className="cf-card-cat">
-                      {/* แปลชื่อหมวดหมู่บน Tag บนรูปภาพ */}
                       {getCatName(item.category)}
                     </span>
                   )}
                 </div>
               </div>
+
+              {/* Body */}
               <div className="cf-card-body">
                 <p className="cf-card-title">{item.title}</p>
                 <div className="cf-card-footer">
                   <span className="cf-card-date">{formatDate(item.createdAt)}</span>
                   <span className="cf-card-views">
-                    👁 {item.views || 0} {t('popular_views')}
+                    👁 {fmtViews(item.views)} {t('popular_views')}
                   </span>
                 </div>
               </div>
@@ -85,8 +102,12 @@ function CategoryFilter({ categories, selectedCategory, onSelectCategory, news =
           ))}
         </div>
       ) : (
-        <div className="cf-empty">{t('cf_noNews')}</div>
+        <div className="cf-empty">
+          <span className="cf-empty-icon">📰</span>
+          <p className="cf-empty-text">{t('cf_noNews')}</p>
+        </div>
       )}
+
     </div>
   );
 }
