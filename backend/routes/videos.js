@@ -22,6 +22,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// ── Helper: สร้าง thumbnail URL จาก videoUrl ──
+// เช่น .../video/upload/v123/videos/abc.mp4
+// → .../video/upload/so_5,w_640,h_360,c_fill/videos/abc.jpg
+function buildThumbnailUrl(videoUrl) {
+  if (!videoUrl) return '';
+  return videoUrl
+    .replace('/upload/', '/upload/so_5,w_640,h_360,c_fill/')
+    .replace(/\.(mp4|mov|avi|mkv|webm)$/i, '.jpg');
+}
+
 // ── Multer + Cloudinary storage ──
 const storage = new CloudinaryStorage({
   cloudinary,
@@ -30,17 +40,6 @@ const storage = new CloudinaryStorage({
     resource_type: 'video',
     allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
     transformation: [{ quality: 'auto' }],
-    // ✅ generate thumbnail ทันทีหลังอัพโหลด
-    eager: [
-      {
-        width: 640,
-        height: 360,
-        crop: 'fill',
-        format: 'jpg',
-        start_offset: '0',
-      },
-    ],
-    eager_async: false,
   }),
 });
 
@@ -67,9 +66,8 @@ router.get('/', async (req, res) => {
     }
 
     const skip = (Number(page) - 1) * Number(limit);
-
-    // ✅ ใช้ mongoose.models.Video โดยตรงเพื่อป้องกัน case-sensitive require พัง
     const VideoModel = mongoose.models.Video || Video;
+
     const [total, videos] = await Promise.all([
       VideoModel.countDocuments(filter),
       VideoModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
@@ -113,26 +111,19 @@ router.post('/', auth, admin, upload.single('video'), async (req, res) => {
     const { title, description, category, tags, author } = req.body;
     if (!title?.trim()) return res.status(400).json({ message: 'กรุณากรอกชื่อวิดีโอ' });
 
-    const publicId = req.file.filename;
+    const videoUrl = req.file.path;
 
-    // ✅ ดึง thumbnail จาก eager result หรือ fallback ด้วย cloudinary.url()
-    const eagerResult = req.file.eager?.[0];
-    const thumbnailUrl = eagerResult?.secure_url
-      || cloudinary.url(publicId, {
-          resource_type: 'video',
-          format: 'jpg',
-          transformation: [
-            { width: 640, height: 360, crop: 'fill', start_offset: '0' },
-          ],
-        });
+    // ✅ สร้าง thumbnail จาก videoUrl โดยตรง ไม่ต้องใช้ eager
+    // เปลี่ยน /upload/ → /upload/so_5,w_640,h_360,c_fill/ และ .mp4 → .jpg
+    const thumbnailUrl = buildThumbnailUrl(videoUrl);
 
     const VideoModel = mongoose.models.Video || Video;
     const video = new VideoModel({
       title:              title.trim(),
       description:        description || '',
-      videoUrl:           req.file.path,
+      videoUrl,
       thumbnailUrl,
-      cloudinaryPublicId: publicId,
+      cloudinaryPublicId: req.file.filename,
       duration:           req.file.duration || 0,
       category:           category || 'ทั่วไป',
       tags:               tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
