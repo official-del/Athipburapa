@@ -9,12 +9,11 @@ import { useTranslatedNews } from '../hooks/useTranslatedNews';
 import '../css/CategoryNews.css';
 
 function CategoryNews() {
-  const { categoryName }  = useParams();
+  const { categoryName }      = useParams();
   const [rawNews, setRawNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const { t, lang }           = useLanguage();
 
-  /* แปล news array อัตโนมัติ */
   const { data: news, translating } = useTranslatedNews(rawNews);
 
   useEffect(() => {
@@ -53,11 +52,16 @@ function CategoryNews() {
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
+  const fmtViews = (n) => {
+    if (!n) return '0';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+  };
+
   return (
     <div className="cn-root">
       <Navbar />
 
-      {/* ── HERO BAR ── */}
       <div className="cn-hero-bar">
         <div className="cn-hero-inner">
           <div className="cn-breadcrumb">
@@ -68,6 +72,9 @@ function CategoryNews() {
             <span className="cn-bc-current">{categoryName}</span>
           </div>
           <div className="cn-hero-title-row">
+            <div className="cn-hero-badge">
+              {categoryName?.charAt(0) || 'ข'}
+            </div>
             <div>
               <p className="cn-hero-label">{t('cn_category')}</p>
               <h1 className="cn-hero-title">{categoryName}</h1>
@@ -79,9 +86,7 @@ function CategoryNews() {
         </div>
       </div>
 
-      {/* ── CONTENT ── */}
       <div className="cn-container">
-
         {!loading && (
           <div className="cn-stats-bar">
             <span className="cn-stats-text">
@@ -114,6 +119,7 @@ function CategoryNews() {
                     src={item.image || item.thumbnail}
                     alt={item.title}
                     className="cn-card-img"
+                    loading="lazy"
                     onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.png'; }}
                   />
                   <div className="cn-card-overlay">
@@ -124,7 +130,7 @@ function CategoryNews() {
                   <p className="cn-card-title">{item.title}</p>
                   <div className="cn-card-footer">
                     <span className="cn-card-date">{formatDate(item.createdAt)}</span>
-                    <span className="cn-card-views">👁 {item.views || 0}</span>
+                    <span className="cn-card-views">👁 {fmtViews(item.views)} {t('popular_views')}</span>
                   </div>
                 </div>
               </Link>
