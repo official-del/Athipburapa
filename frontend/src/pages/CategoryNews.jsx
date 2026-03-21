@@ -72,9 +72,6 @@ function CategoryNews() {
             <span className="cn-bc-current">{categoryName}</span>
           </div>
           <div className="cn-hero-title-row">
-            <div className="cn-hero-badge">
-              {categoryName?.charAt(0) || 'ข'}
-            </div>
             <div>
               <p className="cn-hero-label">{t('cn_category')}</p>
               <h1 className="cn-hero-title">{categoryName}</h1>
