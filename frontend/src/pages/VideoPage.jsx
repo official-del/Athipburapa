@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api.js';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { IoSearchOutline, IoPlayCircle, IoEyeOutline,
-         IoTimeOutline, IoGridOutline, IoListOutline,
-         IoChevronBack, IoChevronForward, IoClose } from 'react-icons/io5';
+import {
+  IoSearchOutline, IoPlayCircle, IoEyeOutline,
+  IoTimeOutline, IoGridOutline, IoListOutline,
+  IoChevronBack, IoChevronForward, IoClose,
+  IoChatbubbleOutline, IoShareSocialOutline,
+  IoSendOutline, IoTrashOutline, IoPerson,
+  IoCheckmarkCircle, IoCopyOutline, IoLogoFacebook,
+  IoLogoTwitter, IoLogoLine,
+} from 'react-icons/io5';
 import '../css/VideoPage.css';
 
 const CATEGORIES = ['ทั้งหมด', 'ข่าว', 'กิจกรรม', 'ท่องเที่ยว', 'กีฬา', 'บันเทิง', 'ทั่วไป'];
@@ -22,9 +29,235 @@ function fmtViews(n) {
   return n?.toString() ?? '0';
 }
 
+function timeAgo(date) {
+  const diff = (Date.now() - new Date(date)) / 1000;
+  if (diff < 60)   return 'เมื่อกี้';
+  if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ชั่วโมงที่แล้ว`;
+  return `${Math.floor(diff / 86400)} วันที่แล้ว`;
+}
+
+/* ── Share Panel ── */
+function SharePanel({ video, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const url = `${window.location.origin}/videos?v=${video._id}`;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+      const el = document.createElement('input');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const shareLinks = [
+    {
+      label: 'Facebook',
+      icon: <IoLogoFacebook />,
+      color: '#1877f2',
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    },
+    {
+      label: 'Twitter / X',
+      icon: <IoLogoTwitter />,
+      color: '#000',
+      href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(video.title)}`,
+    },
+    {
+      label: 'LINE',
+      icon: <IoLogoLine />,
+      color: '#06c755',
+      href: `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`,
+    },
+  ];
+
+  return (
+    <div className="vp-share-panel">
+      <div className="vp-share-header">
+        <span>แชร์วิดีโอ</span>
+        <button onClick={onClose}><IoClose /></button>
+      </div>
+      <div className="vp-share-btns">
+        {shareLinks.map(s => (
+          <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+            className="vp-share-social" style={{ '--sc': s.color }}>
+            {s.icon} {s.label}
+          </a>
+        ))}
+      </div>
+      <div className="vp-share-copy">
+        <input readOnly value={url} className="vp-share-url" />
+        <button className="vp-share-copy-btn" onClick={copy}>
+          {copied ? <IoCheckmarkCircle /> : <IoCopyOutline />}
+          {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Comment Section ── */
+function CommentSection({ video }) {
+  const { user } = useAuth();
+  const [comments, setComments]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [content, setContent]     = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]         = useState('');
+
+  const fetchComments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/comments/video/${video._id}`);
+      setComments(res.data || []);
+    } catch {
+      // ไม่แสดง error ถ้าโหลด comment ไม่ได้
+    } finally {
+      setLoading(false);
+    }
+  }, [video._id]);
+
+  useEffect(() => { fetchComments(); }, [fetchComments]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await api.post('/comments', { videoId: video._id, content });
+      setComments(prev => [res.data.comment, ...prev]);
+      setContent('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'เกิดข้อผิดพลาด');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/comments/${id}`);
+      setComments(prev => prev.filter(c => c._id !== id));
+    } catch {
+      // silent
+    }
+  };
+
+  return (
+    <div className="vp-comments">
+      <h3 className="vp-comments-title">
+        <IoChatbubbleOutline /> ความคิดเห็น ({comments.length})
+      </h3>
+
+      {/* ── Input ── */}
+      {user ? (
+        <form className="vp-comment-form" onSubmit={handleSubmit}>
+          <div className="vp-comment-avatar">
+            {user.profileImage || user.image
+              ? <img src={user.profileImage || user.image} alt="" />
+              : <IoPerson />}
+          </div>
+          <div className="vp-comment-input-wrap">
+            <textarea
+              className="vp-comment-input"
+              placeholder="แสดงความคิดเห็น..."
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              rows={2}
+              disabled={submitting}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
+              }}
+            />
+            {error && <p className="vp-comment-error">{error}</p>}
+            <div className="vp-comment-actions">
+              <button
+                type="button"
+                className="vp-comment-cancel"
+                onClick={() => { setContent(''); setError(''); }}
+                disabled={!content || submitting}
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                className="vp-comment-submit"
+                disabled={!content.trim() || submitting}
+              >
+                <IoSendOutline />
+                {submitting ? 'กำลังส่ง...' : 'ส่ง'}
+              </button>
+            </div>
+          </div>
+        </form>
+      ) : (
+        <p className="vp-comment-login">
+          <a href="/login">เข้าสู่ระบบ</a> เพื่อแสดงความคิดเห็น
+        </p>
+      )}
+
+      {/* ── List ── */}
+      {loading ? (
+        <div className="vp-comment-loading">กำลังโหลด...</div>
+      ) : comments.length === 0 ? (
+        <p className="vp-comment-empty">ยังไม่มีความคิดเห็น เป็นคนแรกได้เลย!</p>
+      ) : (
+        <div className="vp-comment-list">
+          {comments.map(c => (
+            <div key={c._id} className="vp-comment-item">
+              <div className="vp-comment-item-avatar">
+                {c.userId?.profileImage
+                  ? <img src={c.userId.profileImage} alt="" />
+                  : <IoPerson />}
+              </div>
+              <div className="vp-comment-item-body">
+                <div className="vp-comment-item-header">
+                  <span className="vp-comment-username">
+                    {c.userId?.username || c.userId?.fullName || 'ผู้ใช้'}
+                  </span>
+                  <span className="vp-comment-time">{timeAgo(c.createdAt)}</span>
+                </div>
+                <p className="vp-comment-content">{c.content}</p>
+              </div>
+              {user && (user._id === c.userId?._id || user.role === 'admin') && (
+                <button
+                  className="vp-comment-delete"
+                  onClick={() => handleDelete(c._id)}
+                  title="ลบ"
+                >
+                  <IoTrashOutline />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Lightbox player ── */
 function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
   const overlayRef = useRef(null);
+  const [tab, setTab] = useState('info'); // 'info' | 'comments'
+  const [showShare, setShowShare] = useState(false);
+
+  useEffect(() => {
+    // reset tab เมื่อเปลี่ยนวิดีโอ
+    setTab('info');
+    setShowShare(false);
+  }, [video._id]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -38,7 +271,8 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
   }, [hasPrev, hasNext]);
 
   return (
-    <div className="vp-overlay" ref={overlayRef} onClick={(e) => e.target === overlayRef.current && onClose()}>
+    <div className="vp-overlay" ref={overlayRef}
+      onClick={(e) => e.target === overlayRef.current && onClose()}>
       <div className="vp-box">
         <button className="vp-close" onClick={onClose}><IoClose /></button>
 
@@ -49,18 +283,14 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
           <button className="vp-nav vp-nav-next" onClick={onNext}><IoChevronForward /></button>
         )}
 
+        {/* ── Video ── */}
         <div className="vp-video-wrap">
-          <video
-            key={video._id}
-            controls
-            autoPlay
-            className="vp-video"
-            poster={video.thumbnailUrl}
-          >
+          <video key={video._id} controls autoPlay className="vp-video" poster={video.thumbnailUrl}>
             <source src={video.videoUrl} type="video/mp4" />
           </video>
         </div>
 
+        {/* ── Info + Tabs ── */}
         <div className="vp-info">
           <h2 className="vp-title">{video.title}</h2>
           <div className="vp-meta">
@@ -70,11 +300,40 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
               <span className="vp-meta-item"><IoTimeOutline /> {fmtDuration(video.duration)}</span>
             )}
           </div>
-          {video.description && <p className="vp-desc">{video.description}</p>}
-          {video.tags?.length > 0 && (
-            <div className="vp-tags">
-              {video.tags.map(t => <span key={t} className="vp-tag">#{t}</span>)}
-            </div>
+
+          {/* ── Action Buttons ── */}
+          <div className="vp-action-bar">
+            <button
+              className={`vp-action-btn ${tab === 'comments' ? 'active' : ''}`}
+              onClick={() => setTab(tab === 'comments' ? 'info' : 'comments')}
+            >
+              <IoChatbubbleOutline /> ความคิดเห็น
+            </button>
+            <button
+              className={`vp-action-btn ${showShare ? 'active' : ''}`}
+              onClick={() => setShowShare(s => !s)}
+            >
+              <IoShareSocialOutline /> แชร์
+            </button>
+          </div>
+
+          {/* ── Share Panel ── */}
+          {showShare && (
+            <SharePanel video={video} onClose={() => setShowShare(false)} />
+          )}
+
+          {/* ── Tab Content ── */}
+          {tab === 'info' ? (
+            <>
+              {video.description && <p className="vp-desc">{video.description}</p>}
+              {video.tags?.length > 0 && (
+                <div className="vp-tags">
+                  {video.tags.map(t => <span key={t} className="vp-tag">#{t}</span>)}
+                </div>
+              )}
+            </>
+          ) : (
+            <CommentSection video={video} />
           )}
         </div>
       </div>
@@ -163,23 +422,18 @@ function VideoPage() {
     setPage(1);
   };
 
-  // ✅ call GET /videos/:id เพื่อเพิ่ม views และอัพเดต state
+  // ✅ call API เพื่อเพิ่ม views
   const openPlayer = async (video) => {
     const idx = videos.findIndex(v => v._id === video._id);
     setActiveVideo(video);
     setActiveIndex(idx);
-
     try {
       const res = await api.get(`/videos/${video._id}`);
-      // อัพเดต views ใน card list ด้วย
       setVideos(prev =>
         prev.map(v => v._id === video._id ? { ...v, views: res.data.views } : v)
       );
-      // อัพเดต views ใน lightbox ด้วย
       setActiveVideo(res.data);
-    } catch (e) {
-      // ถ้า API พัง ก็ยังเปิดวิดีโอได้ปกติ
-    }
+    } catch { /* silent */ }
   };
 
   const closePlayer = () => setActiveVideo(null);
