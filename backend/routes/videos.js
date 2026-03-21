@@ -12,7 +12,7 @@ let Video;
 try {
   Video = require('../models/Video');
 } catch (e) {
-  Video = require('../models/video');
+  Video = require('../models/Video');
 }
 
 // ── Cloudinary config ──
