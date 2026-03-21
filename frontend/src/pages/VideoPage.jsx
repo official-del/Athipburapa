@@ -29,7 +29,7 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     const onKey = (e) => {
-      if (e.key === 'Escape')      onClose();
+      if (e.key === 'Escape')                onClose();
       if (e.key === 'ArrowLeft'  && hasPrev) onPrev();
       if (e.key === 'ArrowRight' && hasNext) onNext();
     };
@@ -141,7 +141,7 @@ function VideoPage() {
       setLoading(true);
       setError(false);
       const params = { page, limit: 12 };
-      if (search)              params.search   = search;
+      if (search)                  params.search   = search;
       if (category !== 'ทั้งหมด') params.category = category;
 
       const res = await api.get('/videos', { params });
@@ -163,21 +163,35 @@ function VideoPage() {
     setPage(1);
   };
 
-  const openPlayer = (video) => {
+  // ✅ call GET /videos/:id เพื่อเพิ่ม views และอัพเดต state
+  const openPlayer = async (video) => {
     const idx = videos.findIndex(v => v._id === video._id);
     setActiveVideo(video);
     setActiveIndex(idx);
+
+    try {
+      const res = await api.get(`/videos/${video._id}`);
+      // อัพเดต views ใน card list ด้วย
+      setVideos(prev =>
+        prev.map(v => v._id === video._id ? { ...v, views: res.data.views } : v)
+      );
+      // อัพเดต views ใน lightbox ด้วย
+      setActiveVideo(res.data);
+    } catch (e) {
+      // ถ้า API พัง ก็ยังเปิดวิดีโอได้ปกติ
+    }
   };
 
   const closePlayer = () => setActiveVideo(null);
 
   const goPrev = () => {
     const idx = activeIndex - 1;
-    if (idx >= 0) { setActiveVideo(videos[idx]); setActiveIndex(idx); }
+    if (idx >= 0) { openPlayer(videos[idx]); setActiveIndex(idx); }
   };
+
   const goNext = () => {
     const idx = activeIndex + 1;
-    if (idx < videos.length) { setActiveVideo(videos[idx]); setActiveIndex(idx); }
+    if (idx < videos.length) { openPlayer(videos[idx]); setActiveIndex(idx); }
   };
 
   return (
