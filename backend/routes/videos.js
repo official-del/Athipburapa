@@ -4,9 +4,16 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const Video = require('../models/Video');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+
+// ✅ โหลด model แบบ safe — รองรับทั้ง Video.js และ video.js
+let Video;
+try {
+  Video = require('../models/Video');
+} catch (e) {
+  Video = require('../models/video');
+}
 
 // ── Cloudinary config ──
 cloudinary.config({
@@ -18,12 +25,23 @@ cloudinary.config({
 // ── Multer + Cloudinary storage ──
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
+  params: async (req, file) => ({
     folder: 'videos',
     resource_type: 'video',
     allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
     transformation: [{ quality: 'auto' }],
-  },
+    // ✅ generate thumbnail ทันทีหลังอัพโหลด
+    eager: [
+      {
+        width: 640,
+        height: 360,
+        crop: 'fill',
+        format: 'jpg',
+        start_offset: '0',
+      },
+    ],
+    eager_async: false,
+  }),
 });
 
 const upload = multer({
@@ -37,7 +55,7 @@ const upload = multer({
 router.get('/', async (req, res) => {
   try {
     const { category, search, limit = 20, page = 1 } = req.query;
-    let filter = {};
+    const filter = {};
 
     if (category) filter.category = category;
     if (search) {
@@ -48,12 +66,14 @@ router.get('/', async (req, res) => {
       ];
     }
 
-    const skip  = (Number(page) - 1) * Number(limit);
-    const total = await Video.countDocuments(filter);
-    const videos = await Video.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // ✅ ใช้ mongoose.models.Video โดยตรงเพื่อป้องกัน case-sensitive require พัง
+    const VideoModel = mongoose.models.Video || Video;
+    const [total, videos] = await Promise.all([
+      VideoModel.countDocuments(filter),
+      VideoModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    ]);
 
     res.json({ videos, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
   } catch (error) {
@@ -70,7 +90,9 @@ router.get('/:id', async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
     }
-    const video = await Video.findById(req.params.id);
+
+    const VideoModel = mongoose.models.Video || Video;
+    const video = await VideoModel.findById(req.params.id);
     if (!video) return res.status(404).json({ message: 'ไม่พบวิดีโอ' });
 
     video.views += 1;
@@ -91,12 +113,26 @@ router.post('/', auth, admin, upload.single('video'), async (req, res) => {
     const { title, description, category, tags, author } = req.body;
     if (!title?.trim()) return res.status(400).json({ message: 'กรุณากรอกชื่อวิดีโอ' });
 
-    const video = new Video({
+    const publicId = req.file.filename;
+
+    // ✅ ดึง thumbnail จาก eager result หรือ fallback ด้วย cloudinary.url()
+    const eagerResult = req.file.eager?.[0];
+    const thumbnailUrl = eagerResult?.secure_url
+      || cloudinary.url(publicId, {
+          resource_type: 'video',
+          format: 'jpg',
+          transformation: [
+            { width: 640, height: 360, crop: 'fill', start_offset: '0' },
+          ],
+        });
+
+    const VideoModel = mongoose.models.Video || Video;
+    const video = new VideoModel({
       title:              title.trim(),
       description:        description || '',
       videoUrl:           req.file.path,
-      thumbnailUrl:       req.file.path.replace('/upload/', '/upload/so_auto,w_640,h_360,c_fill/'),
-      cloudinaryPublicId: req.file.filename,
+      thumbnailUrl,
+      cloudinaryPublicId: publicId,
       duration:           req.file.duration || 0,
       category:           category || 'ทั่วไป',
       tags:               tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
@@ -107,7 +143,6 @@ router.post('/', auth, admin, upload.single('video'), async (req, res) => {
     res.status(201).json({ message: 'อัพโหลดวิดีโอสำเร็จ', video });
   } catch (error) {
     console.error('Upload video error:', error);
-    // ลบไฟล์ออก Cloudinary ถ้าบันทึก DB ไม่ได้
     if (req.file?.filename) {
       await cloudinary.uploader.destroy(req.file.filename, { resource_type: 'video' }).catch(() => {});
     }
@@ -124,15 +159,16 @@ router.put('/:id', auth, admin, async (req, res) => {
       return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
     }
 
-    const video = await Video.findById(req.params.id);
+    const VideoModel = mongoose.models.Video || Video;
+    const video = await VideoModel.findById(req.params.id);
     if (!video) return res.status(404).json({ message: 'ไม่พบวิดีโอ' });
 
     const { title, description, category, tags, author } = req.body;
-    if (title)                 video.title       = title.trim();
+    if (title)                     video.title       = title.trim();
     if (description !== undefined) video.description = description;
-    if (category)              video.category    = category;
-    if (author !== undefined)  video.author      = author;
-    if (tags !== undefined)    video.tags        = typeof tags === 'string'
+    if (category)                  video.category    = category;
+    if (author !== undefined)      video.author      = author;
+    if (tags !== undefined)        video.tags        = typeof tags === 'string'
       ? tags.split(',').map(t => t.trim()).filter(Boolean)
       : tags;
     video.updatedAt = new Date();
@@ -153,10 +189,10 @@ router.delete('/:id', auth, admin, async (req, res) => {
       return res.status(400).json({ message: 'รูปแบบ ID ไม่ถูกต้อง' });
     }
 
-    const video = await Video.findById(req.params.id);
+    const VideoModel = mongoose.models.Video || Video;
+    const video = await VideoModel.findById(req.params.id);
     if (!video) return res.status(404).json({ message: 'ไม่พบวิดีโอ' });
 
-    // ลบออก Cloudinary ด้วย
     if (video.cloudinaryPublicId) {
       await cloudinary.uploader.destroy(video.cloudinaryPublicId, { resource_type: 'video' }).catch(() => {});
     }
