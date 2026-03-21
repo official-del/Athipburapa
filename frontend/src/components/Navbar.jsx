@@ -76,7 +76,6 @@ function Navbar() {
     setSearchLoading(true);
     try {
       const res = await newsAPI.getAll({ search: term });
-      // แสดงแค่ 6 รายการแรก เอาเฉพาะ title + category
       setSuggestions((res.data || []).slice(0, 6));
     } catch { setSuggestions([]); }
     finally { setSearchLoading(false); }
@@ -166,13 +165,6 @@ function Navbar() {
             </Link>
           </div>
 
-          <div className="nb-shortcuts desktop-only">
-            <Link to="/news/category/ข่าวด่วน" className="nb-shortcut-btn"><span className="nb-shortcut-icon green">🏠</span>ข่าวด่วน</Link>
-            <Link to="/news/category/เศรษฐกิจ" className="nb-shortcut-btn"><span className="nb-shortcut-icon gold">💰</span>เศรษฐกิจ</Link>
-            <Link to="/news/category/หวย"      className="nb-shortcut-btn"><span className="nb-shortcut-icon blue">🎲</span>ตรวจหวย</Link>
-            <Link to="/news/category/ดวง"      className="nb-shortcut-btn"><span className="nb-shortcut-icon teal">⭐</span>ดูดวง</Link>
-          </div>
-
           <div className="nb-right">
             <div className="nb-lang-switcher desktop-only">
               <button className={`nb-lang-btn${lang === 'th' ? ' active' : ''}`} onClick={() => switchLang('th')}>TH</button>
@@ -235,7 +227,7 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* ══════════════ SEARCH OVERLAY (ใหม่) ══════════════ */}
+      {/* ══════════════ SEARCH OVERLAY ══════════════ */}
       {showSearch && (
         <>
           <div className="nb-overlay-backdrop" onClick={() => setShowSearch(false)} />

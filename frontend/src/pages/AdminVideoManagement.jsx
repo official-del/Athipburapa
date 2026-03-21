@@ -98,6 +98,32 @@ function UploadZone({ file, onChange, disabled, progress }) {
   );
 }
 
+/* ── Thumbnail Cell ── */
+function ThumbCell({ video }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (!video.thumbnailUrl || imgError) {
+    return (
+      <div className="avd-thumb-cell">
+        <div className="avd-thumb-placeholder">
+          <HiOutlineVideoCamera />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="avd-thumb-cell">
+      <img
+        src={video.thumbnailUrl}
+        alt={video.title}
+        className="avd-thumb"
+        onError={() => setImgError(true)}
+      />
+    </div>
+  );
+}
+
 /* ── Main Component ── */
 function AdminVideoManagement() {
   const { user, loading: authLoading } = useAuth();
@@ -276,14 +302,8 @@ function AdminVideoManagement() {
               <tbody>
                 {videos.map(v => (
                   <tr key={v._id}>
-                    <td>
-                      <div className="avd-thumb-cell">
-                        {v.thumbnailUrl
-                          ? <img src={v.thumbnailUrl} alt={v.title} className="avd-thumb" onError={(e) => { e.target.style.display = 'none'; }} />
-                          : <div className="avd-thumb-placeholder"><HiOutlineVideoCamera /></div>
-                        }
-                      </div>
-                    </td>
+                    {/* ✅ ใช้ ThumbCell component ที่มี error state */}
+                    <td><ThumbCell video={v} /></td>
                     <td className="avd-title-cell">{v.title}</td>
                     <td><span className="avd-cat-badge">{v.category}</span></td>
                     <td>{fmtDuration(v.duration)}</td>
