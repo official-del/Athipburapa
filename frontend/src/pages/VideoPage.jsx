@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
 import api from '../services/api.js';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import CommentSection from '../components/CommentSection';
+import ShareButtons from '../components/ShareButtons';
 import {
   IoSearchOutline, IoPlayCircle, IoEyeOutline,
   IoTimeOutline, IoGridOutline, IoListOutline,
   IoChevronBack, IoChevronForward, IoClose,
   IoChatbubbleOutline, IoShareSocialOutline,
-  IoSendOutline, IoTrashOutline, IoPerson,
-  IoCheckmarkCircle, IoCopyOutline, IoLogoFacebook,
-  IoLogoTwitter,
 } from 'react-icons/io5';
 import '../css/VideoPage.css';
 
@@ -29,237 +27,13 @@ function fmtViews(n) {
   return n?.toString() ?? '0';
 }
 
-function timeAgo(date) {
-  const diff = (Date.now() - new Date(date)) / 1000;
-  if (diff < 60)    return 'เมื่อกี้';
-  if (diff < 3600)  return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} ชั่วโมงที่แล้ว`;
-  return `${Math.floor(diff / 86400)} วันที่แล้ว`;
-}
-
-/* ── LINE Icon SVG (ไม่มีใน react-icons/io5) ── */
-function LineIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.070 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-    </svg>
-  );
-}
-
-/* ── Share Panel ── */
-function SharePanel({ video, onClose }) {
-  const [copied, setCopied] = useState(false);
-  const url = `${window.location.origin}/videos?v=${video._id}`;
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      const el = document.createElement('input');
-      el.value = url;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareLinks = [
-    {
-      label: 'Facebook',
-      icon: <IoLogoFacebook />,
-      color: '#1877f2',
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-    },
-    {
-      label: 'Twitter / X',
-      icon: <IoLogoTwitter />,
-      color: '#000',
-      href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(video.title)}`,
-    },
-    {
-      label: 'LINE',
-      icon: <LineIcon />,
-      color: '#06c755',
-      href: `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`,
-    },
-  ];
-
-  return (
-    <div className="vp-share-panel">
-      <div className="vp-share-header">
-        <span>แชร์วิดีโอ</span>
-        <button onClick={onClose}><IoClose /></button>
-      </div>
-      <div className="vp-share-btns">
-        {shareLinks.map(s => (
-          <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-            className="vp-share-social" style={{ '--sc': s.color }}>
-            {s.icon} {s.label}
-          </a>
-        ))}
-      </div>
-      <div className="vp-share-copy">
-        <input readOnly value={url} className="vp-share-url" />
-        <button className="vp-share-copy-btn" onClick={copy}>
-          {copied ? <IoCheckmarkCircle /> : <IoCopyOutline />}
-          {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Comment Section ── */
-function CommentSection({ video }) {
-  const { user } = useAuth();
-  const [comments, setComments]     = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [content, setContent]       = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState('');
-
-  const fetchComments = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.get(`/comments/video/${video._id}`);
-      setComments(res.data || []);
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, [video._id]);
-
-  useEffect(() => { fetchComments(); }, [fetchComments]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!content.trim()) return;
-    setSubmitting(true);
-    setError('');
-    try {
-      const res = await api.post('/comments', { videoId: video._id, content });
-      setComments(prev => [res.data.comment, ...prev]);
-      setContent('');
-    } catch (err) {
-      setError(err.response?.data?.message || 'เกิดข้อผิดพลาด');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/comments/${id}`);
-      setComments(prev => prev.filter(c => c._id !== id));
-    } catch {
-      // silent
-    }
-  };
-
-  return (
-    <div className="vp-comments">
-      <h3 className="vp-comments-title">
-        <IoChatbubbleOutline /> ความคิดเห็น ({comments.length})
-      </h3>
-
-      {user ? (
-        <form className="vp-comment-form" onSubmit={handleSubmit}>
-          <div className="vp-comment-avatar">
-            {user.profileImage || user.image
-              ? <img src={user.profileImage || user.image} alt="" />
-              : <IoPerson />}
-          </div>
-          <div className="vp-comment-input-wrap">
-            <textarea
-              className="vp-comment-input"
-              placeholder="แสดงความคิดเห็น..."
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              rows={2}
-              disabled={submitting}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
-              }}
-            />
-            {error && <p className="vp-comment-error">{error}</p>}
-            <div className="vp-comment-actions">
-              <button
-                type="button"
-                className="vp-comment-cancel"
-                onClick={() => { setContent(''); setError(''); }}
-                disabled={!content || submitting}
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="submit"
-                className="vp-comment-submit"
-                disabled={!content.trim() || submitting}
-              >
-                <IoSendOutline />
-                {submitting ? 'กำลังส่ง...' : 'ส่ง'}
-              </button>
-            </div>
-          </div>
-        </form>
-      ) : (
-        <p className="vp-comment-login">
-          <a href="/login">เข้าสู่ระบบ</a> เพื่อแสดงความคิดเห็น
-        </p>
-      )}
-
-      {loading ? (
-        <div className="vp-comment-loading">กำลังโหลด...</div>
-      ) : comments.length === 0 ? (
-        <p className="vp-comment-empty">ยังไม่มีความคิดเห็น เป็นคนแรกได้เลย!</p>
-      ) : (
-        <div className="vp-comment-list">
-          {comments.map(c => (
-            <div key={c._id} className="vp-comment-item">
-              <div className="vp-comment-item-avatar">
-                {c.userId?.profileImage
-                  ? <img src={c.userId.profileImage} alt="" />
-                  : <IoPerson />}
-              </div>
-              <div className="vp-comment-item-body">
-                <div className="vp-comment-item-header">
-                  <span className="vp-comment-username">
-                    {c.userId?.username || c.userId?.fullName || 'ผู้ใช้'}
-                  </span>
-                  <span className="vp-comment-time">{timeAgo(c.createdAt)}</span>
-                </div>
-                <p className="vp-comment-content">{c.content}</p>
-              </div>
-              {user && (user._id === c.userId?._id || user.role === 'admin') && (
-                <button
-                  className="vp-comment-delete"
-                  onClick={() => handleDelete(c._id)}
-                  title="ลบ"
-                >
-                  <IoTrashOutline />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ── Lightbox player ── */
 function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
   const overlayRef = useRef(null);
-  const [tab, setTab]           = useState('info');
-  const [showShare, setShowShare] = useState(false);
+  const [tab, setTab] = useState('info'); // 'info' | 'comments' | 'share'
 
   useEffect(() => {
     setTab('info');
-    setShowShare(false);
   }, [video._id]);
 
   useEffect(() => {
@@ -272,6 +46,8 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
     window.addEventListener('keydown', onKey);
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [hasPrev, hasNext]);
+
+  const videoUrl = `${window.location.origin}/videos`;
 
   return (
     <div className="vp-overlay" ref={overlayRef}
@@ -302,7 +78,7 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
             )}
           </div>
 
-          {/* ── Action Buttons ── */}
+          {/* ── Tab Buttons ── */}
           <div className="vp-action-bar">
             <button
               className={`vp-action-btn ${tab === 'comments' ? 'active' : ''}`}
@@ -311,18 +87,15 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
               <IoChatbubbleOutline /> ความคิดเห็น
             </button>
             <button
-              className={`vp-action-btn ${showShare ? 'active' : ''}`}
-              onClick={() => setShowShare(s => !s)}
+              className={`vp-action-btn ${tab === 'share' ? 'active' : ''}`}
+              onClick={() => setTab(tab === 'share' ? 'info' : 'share')}
             >
               <IoShareSocialOutline /> แชร์
             </button>
           </div>
 
-          {showShare && (
-            <SharePanel video={video} onClose={() => setShowShare(false)} />
-          )}
-
-          {tab === 'info' ? (
+          {/* ── Tab: Info ── */}
+          {tab === 'info' && (
             <>
               {video.description && <p className="vp-desc">{video.description}</p>}
               {video.tags?.length > 0 && (
@@ -331,8 +104,16 @@ function VideoPlayer({ video, onClose, onPrev, onNext, hasPrev, hasNext }) {
                 </div>
               )}
             </>
-          ) : (
-            <CommentSection video={video} />
+          )}
+
+          {/* ── Tab: Comments — ✅ ใช้ CommentSection เดิม ส่ง videoId ── */}
+          {tab === 'comments' && (
+            <CommentSection videoId={video._id} />
+          )}
+
+          {/* ── Tab: Share — ✅ ใช้ ShareButtons เดิม ── */}
+          {tab === 'share' && (
+            <ShareButtons title={video.title} url={videoUrl} />
           )}
         </div>
       </div>

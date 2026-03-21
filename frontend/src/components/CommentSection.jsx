@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { commentAPI } from '../services/api';
+import api from '../services/api';
 import { Link } from 'react-router-dom';
 import './CommentSection.css';
 
@@ -14,23 +15,33 @@ const getInitials = (fullName, username) => {
   return '?';
 };
 
-function CommentSection({ newsId }) {
+// ✅ รองรับทั้ง newsId และ videoId
+function CommentSection({ newsId, videoId }) {
   const { user } = useAuth();
   const [comments, setComments]     = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
 
+  const targetId = newsId || videoId;
+  const isVideo  = !!videoId;
+
   useEffect(() => {
-    if (newsId && /^[a-fA-F0-9]{24}$/.test(newsId)) {
+    if (targetId && /^[a-fA-F0-9]{24}$/.test(targetId)) {
       fetchComments();
     }
-  }, [newsId]);
+  }, [targetId]);
 
   const fetchComments = async () => {
     try {
-      const response = await commentAPI.getByNewsId(newsId);
-      setComments(response.data);
+      let response;
+      if (isVideo) {
+        response = await api.get(`/comments/video/${videoId}`);
+        setComments(response.data || []);
+      } else {
+        response = await commentAPI.getByNewsId(newsId);
+        setComments(response.data || []);
+      }
     } catch (err) {
       console.error('Error fetching comments:', err);
     }
@@ -45,10 +56,12 @@ function CommentSection({ newsId }) {
     setLoading(true);
     setError('');
     try {
-      const response = await commentAPI.create({
-        newsId:  newsId,
-        content: newComment
-      });
+      // ✅ ส่ง newsId หรือ videoId ตามที่ได้รับมา
+      const payload = isVideo
+        ? { videoId, content: newComment }
+        : { newsId,  content: newComment };
+
+      const response = await commentAPI.create(payload);
       if (response.data.comment) {
         setComments([response.data.comment, ...comments]);
       } else {
@@ -76,11 +89,11 @@ function CommentSection({ newsId }) {
     const date = new Date(dateString);
     return date.toLocaleDateString('th-TH', {
       year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+      hour: '2-digit', minute: '2-digit',
     });
   };
 
-  if (!newsId || !/^[a-fA-F0-9]{24}$/.test(newsId)) return null;
+  if (!targetId || !/^[a-fA-F0-9]{24}$/.test(targetId)) return null;
 
   return (
     <div className="comment-section">
